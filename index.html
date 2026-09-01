@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--fyi if ur reading this i think you can tell its vibecoded, i dont wanna learn html and especially not css so idc
+handle it, the backend ill learn on my own -->
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>Setup &middot; DashCalc</title>
+
+  <style>
+    /* ============ RESET ============ */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      min-height: 100dvh;
+    }
+
+    input,
+    select,
+    button,
+    textarea {
+      font: inherit;
+      color: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      background: none;
+      border: 0;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    /* ============ TOKENS ============ */
+    /* Plain and bright, like a delivery app. One warm red is the brand and the
+       action colour - buttons, the wordmark, focus rings. Everything else is
+       black text on white cards. Red is never used just for decoration. */
+    :root {
+      --red: #EB1700;
+      /* brand + primary action */
+      --red-press: #B92F10;
+      /* pressed / darker red */
+      --red-tint: #FCEEE9;
+      /* faint red wash behind readouts */
+      --on-red: #FFFFFF;
+
+      --bg: #F7F6F4;
+      /* page behind the cards */
+      --surface: #FFFFFF;
+      /* card face */
+      --surface-2: #F2F1EF;
+      /* recessed rows, unit chips */
+
+      --text: #1C1C1C;
+      /* headings and values */
+      --text-dim: #6B6B6B;
+      /* labels, helper text, units */
+      --text-mute: #8C8C8C;
+      /* fine print */
+
+      --border: #E3E1DE;
+      /* card and input outlines */
+      --border-strong: #CFCCC8;
+      /* input outline, a touch darker */
+
+      --good: #12824A;
+      /* the "saved" confirmation only */
+
+      --tap: 56px;
+      /* min tap target - one hand, in a car */
+      --radius: 14px;
+
+      --font: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-num: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --red: #E0431F;
+        --red-press: #C7381A;
+        --red-tint: #2A1712;
+        --on-red: #FFFFFF;
+
+        --bg: #121212;
+        --surface: #1D1D1D;
+        --surface-2: #262626;
+
+        --text: #F1F0EE;
+        --text-dim: #8f8d8a;
+        --text-mute: #7C7A77;
+
+        --border: #333230;
+        --border-strong: #454341;
+
+        --good: #4ADE80;
+      }
+    }
+
+    /* ============ BASE ============ */
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ============ SHELL ============ */
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ============ TOP BAR ============ */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topbar__mark {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--red);
+    }
+
+    .topbar__step {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+
+    /* ============ CONTENT ============ */
+    .content {
+      flex: 1;
+      padding: 24px 20px 0;
+    }
+
+    .intro {
+      margin-bottom: 22px;
+    }
+
+    .intro__title {
+      font-size: clamp(1.6rem, 6vw, 2.75rem);
+      font-weight: 1000;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+
+    .intro__lead {
+      margin-top: 8px;
+      font-size: 0.9375rem;
+      color: var(--text-dim);
+    }
+
+    /* ============ CARD ============ */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 18px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+
+    .card+.card {
+      margin-top: 14px;
+    }
+
+    .card__title {
+      font-size: 1.0625rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .card__note {
+      margin-top: 6px;
+      font-size: 0.875rem;
+      color: var(--text-dim);
+    }
+
+    .card__title+.field,
+    .card__note+.field {
+      margin-top: 16px;
+    }
+
+    /* ============ FIELD ============ */
+    .field+.field {
+      margin-top: 16px;
+    }
+
+    .field__label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.9375rem;
+    }
+
+    .field__help {
+      margin: 3px 0 8px;
+      font-size: 0.8125rem;
+      color: var(--text-dim);
+    }
+
+    .field__label+.field__control {
+      margin-top: 8px;
+    }
+
+    .field__control {
+      display: flex;
+      align-items: stretch;
+      min-height: var(--tap);
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+
+    .field__control:focus-within {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px var(--red-tint);
+    }
+
+    .field__input {
+      flex: 1;
+      min-width: 0;
+      padding: 12px 14px;
+      border: 0;
+      background: transparent;
+      outline: 0;
+      font-family: var(--font-num);
+      font-size: 1.3125rem;
+      font-weight: 500;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .field__input::placeholder {
+      color: var(--text-mute);
+    }
+
+    .field__unit {
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      background: var(--surface-2);
+      border-left: 1px solid var(--border);
+      font-size: 0.875rem;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+
+    /* strip the browser's number spinners */
+    .field__input::-webkit-outer-spin-button,
+    .field__input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .field__input[type="number"] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
+    /* select variant: custom caret, no native chrome */
+    .field__control--select {
+      position: relative;
+    }
+
+    .field__control--select::after {
+      content: "";
+      position: absolute;
+      right: 18px;
+      top: 50%;
+      width: 9px;
+      height: 9px;
+      border-right: 2px solid var(--red);
+      border-bottom: 2px solid var(--red);
+      transform: translateY(-70%) rotate(45deg);
+      pointer-events: none;
+    }
+
+    select.field__input {
+      appearance: none;
+      -webkit-appearance: none;
+      font-family: var(--font);
+      font-size: 1.0625rem;
+      font-weight: 500;
+      cursor: pointer;
+      padding-right: 40px;
+    }
+
+    select.field__input:invalid {
+      color: var(--text-mute);
+    }
+
+    select.field__input option {
+      color: var(--text);
+    }
+
+    /* ============ READOUT (live result rows) ============ */
+    .readout {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 14px 16px;
+      background: var(--red-tint);
+      border-radius: 12px;
+    }
+
+    .readout__row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .readout__label {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+
+    .readout__value {
+      font-family: var(--font-num);
+      font-size: 1.375rem;
+      font-weight: 700;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .readout__value--sm {
+      font-size: 1.0625rem;
+    }
+
+    /* ============ SECONDARY LINK BUTTON ============ */
+    .linkbtn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 16px;
+      min-height: var(--tap);
+      padding: 0 18px;
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.9375rem;
+      text-decoration: none;
+      transition: border-color 150ms ease;
+    }
+
+    .linkbtn:hover,
+    .linkbtn:focus-visible {
+      border-color: var(--red);
+      outline: none;
+    }
+
+    .linkbtn__arrow {
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid var(--red);
+      border-top: 2px solid var(--red);
+      transform: rotate(45deg);
+    }
+
+    /* ============ SAVE BAR ============ */
+    .savebar {
+      position: sticky;
+      bottom: 0;
+      margin-top: 24px;
+      padding: 14px 20px calc(16px + env(safe-area-inset-bottom));
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+    }
+
+    .savebar__button {
+      width: 100%;
+      min-height: var(--tap);
+      border-radius: 12px;
+      background: var(--red);
+      color: var(--on-red);
+      font-weight: 700;
+      font-size: 1.0625rem;
+      letter-spacing: 0.01em;
+      transition: background-color 120ms ease, transform 80ms ease;
+    }
+
+    .savebar__button:hover {
+      background: var(--red-press);
+    }
+
+    .savebar__button:active {
+      transform: translateY(1px);
+    }
+
+    .savebar__button:focus-visible {
+      outline: 2px solid var(--text);
+      outline-offset: 3px;
+    }
+
+    .savebar__status {
+      margin-top: 8px;
+      min-height: 1.25rem;
+      text-align: center;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--good);
+    }
+
+    .savebar__fineprint {
+      margin-top: 2px;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-mute);
+    }
+
+    /* ============ CREDIT (maker's mark) ============ */
+    .credit {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 22px 20px calc(26px + env(safe-area-inset-bottom));
+      text-align: center;
+    }
+
+    .credit::before {
+      content: "";
+      width: 28px;
+      height: 1px;
+      background: var(--border-strong);
+    }
+
+    .credit__text {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      color: var(--text-mute);
+    }
+
+    .credit__name {
+      color: var(--text-dim);
+    }
+
+    /* ============ MOTION ============ */
+    @media (prefers-reduced-motion: reduce) {
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <header class="topbar">
+      <span class="topbar__mark">DashCalc</span>
+      <span class="topbar__step">Step 1 of 2</span>
+    </header>
+
+    <main class="content">
+
+      <div class="intro">
+        <h1 class="intro__title">Configuration.</h1>
+        <p class="intro__lead">This gig isn't free money, you spend money on gas and wear and tear so this should give
+          the calculator a good estimate for you personally.</p>
+      </div>
+
+      <!-- The whole setup is one form. The Save button is type="button" so the page
+           never reloads on its own; your JavaScript owns what "save" does. Each field
+           has an id (grab one value) AND a name (grab the whole form at once). -->
+      <form id="setup-form">
+
+        <!-- ---------- VEHICLE ---------- -->
+        <section class="card">
+          <h2 class="card__title">Vehicle</h2>
+
+          <div class="field">
+            <label class="field__label" for="mpg">Fuel economy</label>
+            <p class="field__help">Your average milage, you should have a sticker on your car, but if not you can
+              calculate it yourself.</p>
+            <div class="field__control">
+              <input class="field__input" id="mpg" name="mpg" type="number" inputmode="decimal" step="0.1" min="1"
+                placeholder="28">
+              <span class="field__unit">mpg</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="gas-price">Gas prices</label>
+            <p class="field__help">What are you paying for gas?</p>
+            <div class="field__control">
+              <input class="field__input" id="gas-price" name="gasPrice" type="number" inputmode="decimal" step="0.01"
+                min="0" placeholder="3.45">
+              <span class="field__unit">$/gal</span>
+            </div>
+          </div>
+
+          <div class="readout">
+            <div class="readout__row">
+              <span class="readout__label">$ spent on gas/mile</span>
+              <span class="readout__value" id="gas-cost-per-mile">&mdash;</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------- TAXES ---------- -->
+        <section class="card">
+          <h2 class="card__title">Taxes</h2>
+          <p class="card__note">Self-employment tax is 15.3% for everyone in this field. Add
+            your state so we can calculate what you set aside.</p>
+
+          <div class="field">
+            <label class="field__label" for="home-state">Home state</label>
+            <div class="field__control field__control--select">
+              <select class="field__input" id="home-state" name="homeState" required>
+                <option value="" disabled selected>Select your state</option>
+                <option value="AL">Alabama</option>
+                <option value="AK">Alaska</option>
+                <option value="AZ">Arizona</option>
+                <option value="AR">Arkansas</option>
+                <option value="CA">California</option>
+                <option value="CO">Colorado</option>
+                <option value="CT">Connecticut</option>
+                <option value="DE">Delaware</option>
+                <option value="DC">District of Columbia</option>
+                <option value="FL">Florida</option>
+                <option value="GA">Georgia</option>
+                <option value="HI">Hawaii</option>
+                <option value="ID">Idaho</option>
+                <option value="IL">Illinois</option>
+                <option value="IN">Indiana</option>
+                <option value="IA">Iowa</option>
+                <option value="KS">Kansas</option>
+                <option value="KY">Kentucky</option>
+                <option value="LA">Louisiana</option>
+                <option value="ME">Maine</option>
+                <option value="MD">Maryland</option>
+                <option value="MA">Massachusetts</option>
+                <option value="MI">Michigan</option>
+                <option value="MN">Minnesota</option>
+                <option value="MS">Mississippi</option>
+                <option value="MO">Missouri</option>
+                <option value="MT">Montana</option>
+                <option value="NE">Nebraska</option>
+                <option value="NV">Nevada</option>
+                <option value="NH">New Hampshire</option>
+                <option value="NJ">New Jersey</option>
+                <option value="NM">New Mexico</option>
+                <option value="NY">New York</option>
+                <option value="NC">North Carolina</option>
+                <option value="ND">North Dakota</option>
+                <option value="OH">Ohio</option>
+                <option value="OK">Oklahoma</option>
+                <option value="OR">Oregon</option>
+                <option value="PA">Pennsylvania</option>
+                <option value="RI">Rhode Island</option>
+                <option value="SC">South Carolina</option>
+                <option value="SD">South Dakota</option>
+                <option value="TN">Tennessee</option>
+                <option value="TX">Texas</option>
+                <option value="UT">Utah</option>
+                <option value="VT">Vermont</option>
+                <option value="VA">Virginia</option>
+                <option value="WA">Washington</option>
+                <option value="WV">West Virginia</option>
+                <option value="WI">Wisconsin</option>
+                <option value="WY">Wyoming</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="readout">
+            <div class="readout__row">
+              <span class="readout__label">IRS deduction per mile</span>
+              <span class="readout__value readout__value--sm" id="irs-rate-display">&mdash;</span>
+            </div>
+            <div class="readout__row">
+              <span class="readout__label">You set this aside per $1 earned</span>
+              <span class="readout__value" id="tax-per-dollar">&mdash;</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------- CONDITIONS ---------- -->
+        <section class="card">
+          <h2 class="card__title">Your specifics</h2>
+          <p class="card__note">Averages across all your dashing &mdash; just a general estimate as it isn't as
+            important.</p>
+
+          <div class="field">
+            <label class="field__label" for="typical-wait">Typical wait at the store</label>
+            <p class="field__help">From arriving to food in hand</p>
+            <div class="field__control">
+              <input class="field__input" id="typical-wait" name="typicalWait" type="number" inputmode="numeric"
+                step="1" min="0" value="6">
+              <span class="field__unit">min</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="avg-speed">Average driving speed</label>
+            <p class="field__help">Door to door, surface streets and all</p>
+            <div class="field__control">
+              <input class="field__input" id="avg-speed" name="avgSpeed" type="number" inputmode="numeric" step="1"
+                min="1" value="24">
+              <span class="field__unit">mph</span>
+            </div>
+          </div>
+        </section>
+
+        <a class="linkbtn" href="calculator.html">
+          <span>Hit once you've saved &mdash; Calculator</span>
+          <span class="linkbtn__arrow" aria-hidden="true"></span>
+        </a>
+
+        <div class="savebar">
+          <button class="savebar__button" id="save-setup" type="button">Save setup</button>
+          <p class="savebar__status" id="save-status" role="status" aria-live="polite"></p>
+          <p class="savebar__fineprint">No account, no tracking. Every number stays on this phone. </p>
+        </div>
+
+      </form>
+
+      <footer class="credit">
+        <span class="credit__text">Created by <span class="credit__name">Xernosz</span></span>
+      </footer>
+    </main>
+  </div>
+</body>
+
+</html>
