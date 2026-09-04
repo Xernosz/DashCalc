@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Type in a DoorDash offer and see what it really pays after gas and taxes.">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1D1D1D" media="(prefers-color-scheme: dark)">
+  <title>Calculator &middot; DashCalc</title>
+
+  <link rel="stylesheet" href="tokens.css">
+
+  <style>
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topbar__mark {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--red);
+    }
+
+    .topbar__sheet {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 48px;
+      padding: 0 15px;
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      transition: border-color 150ms ease, background-color 150ms ease;
+    }
+
+    .topbar__sheet:focus-visible {
+      border-color: var(--red);
+      outline: none;
+    }
+
+    .topbar__sheet svg {
+      opacity: 0.5;
+      flex-shrink: 0;
+    }
+
+    .today {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .today__cell {
+      padding: 9px 8px 11px;
+      text-align: center;
+    }
+
+    .today__cell+.today__cell {
+      border-left: 1px solid var(--border);
+    }
+
+    .today__v {
+      font-family: var(--font-num);
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+
+    .today__k {
+      margin-top: 1px;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .content {
+      flex: 1;
+      padding: 16px 16px 0;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      overflow: hidden;
+    }
+
+    .card+.card {
+      margin-top: 14px;
+    }
+
+    .card__pad {
+      padding: 16px;
+    }
+
+    .ask+.ask {
+      margin-top: 16px;
+    }
+
+    .ask__q {
+      display: block;
+      font-size: 1.0625rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .ask__control {
+      display: flex;
+      align-items: stretch;
+      min-height: var(--tap);
+      margin-top: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+
+    .ask__control:focus-within {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px var(--red-tint);
+    }
+
+    .ask__sign {
+      display: flex;
+      align-items: center;
+      padding-left: 14px;
+      font-family: var(--font-num);
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-mute);
+    }
+
+    .ask__input {
+      flex: 1;
+      min-width: 0;
+      width: 100%;
+      padding: 10px 12px;
+      border: 0;
+      background: transparent;
+      outline: 0;
+      font-family: var(--font-num);
+      font-size: 1.75rem;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ask__input::placeholder {
+      color: var(--text-mute);
+      font-weight: 500;
+    }
+
+    .ask__unit {
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      background: var(--surface-2);
+      border-left: 1px solid var(--border);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+
+    .more {
+      border-top: 1px solid var(--border);
+    }
+
+    .more__sum {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 54px;
+      padding: 0 16px;
+      list-style: none;
+      cursor: pointer;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+
+    .more__sum::-webkit-details-marker {
+      display: none;
+    }
+
+    .more__sum::before {
+      content: "";
+      flex-shrink: 0;
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid var(--text-mute);
+      border-bottom: 2px solid var(--text-mute);
+      transform: rotate(45deg) translate(-2px, -2px);
+      transition: transform 180ms ease;
+    }
+
+    .more[open] .more__sum::before {
+      transform: rotate(-135deg) translate(-2px, -2px);
+    }
+
+    .more__sum:focus-visible {
+      outline: 2px solid var(--red);
+      outline-offset: -2px;
+    }
+
+    .more__body {
+      padding: 2px 16px 16px;
+    }
+
+    .verdict {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 16px;
+    }
+
+    .dial {
+      position: relative;
+      flex: 0 0 auto;
+      width: 108px;
+      height: 108px;
+      border-radius: 50%;
+      background: conic-gradient(var(--g) 0 var(--fill, 0%), var(--border) var(--fill, 0%) 100%);
+      display: grid;
+      place-items: center;
+      transition: background 260ms ease;
+    }
+
+    .dial::after {
+      content: "";
+      position: absolute;
+      inset: 10px;
+      border-radius: 50%;
+      background: var(--surface);
+    }
+
+    .dial__in {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      line-height: 1;
+    }
+
+    .dial__letter {
+      font-size: 3.25rem;
+      font-weight: 900;
+      letter-spacing: -0.06em;
+      color: var(--g);
+      transition: color 260ms ease;
+    }
+
+    .dial__word {
+      margin-top: 4px;
+      font-size: 0.625rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+    }
+
+    .verdict__money {
+      min-width: 0;
+    }
+
+    .verdict__big {
+      font-family: var(--font-num);
+      font-size: 2.625rem;
+      font-weight: 800;
+      letter-spacing: -0.055em;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .verdict__sub {
+      margin-top: 6px;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      line-height: 1.3;
+    }
+
+    .call {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 13px 16px;
+      background: var(--g-tint);
+      border-top: 1px solid var(--border);
+      color: var(--g);
+      font-size: 1.375rem;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      transition: background-color 260ms ease, color 260ms ease;
+    }
+
+    .facts {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid var(--border);
+    }
+
+    .facts__cell {
+      padding: 12px 8px 13px;
+      text-align: center;
+    }
+
+    .facts__cell+.facts__cell {
+      border-left: 1px solid var(--border);
+    }
+
+    .facts__v {
+      font-family: var(--font-num);
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+
+    .facts__k {
+      margin-top: 2px;
+      font-size: 0.8125rem;
+      color: var(--text-dim);
+    }
+
+    .math__row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 7px 0;
+      font-size: 1rem;
+    }
+
+    .math__k {
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+
+    .math__dots {
+      flex: 1;
+      border-bottom: 1px dotted var(--border-strong);
+      transform: translateY(-4px);
+    }
+
+    .math__v {
+      font-family: var(--font-num);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .math__v--neg {
+      color: var(--grade-f);
+    }
+
+    .math__rule {
+      height: 1px;
+      background: var(--border-strong);
+      margin: 8px 0;
+    }
+
+    .math__row--total .math__k {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .math__note {
+      margin-top: 10px;
+      font-size: 0.8125rem;
+      color: var(--text-mute);
+    }
+
+    .empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 44px 20px;
+      text-align: center;
+    }
+
+    .empty__mark {
+      width: 46px;
+      height: 46px;
+      margin-bottom: 8px;
+      border-radius: 50%;
+      border: 2px dashed var(--border-strong);
+      display: grid;
+      place-items: center;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text-mute);
+    }
+
+    .empty__t {
+      font-size: 1.0625rem;
+      font-weight: 700;
+      color: var(--text-dim);
+    }
+
+    .empty__s {
+      font-size: 0.9375rem;
+      color: var(--text-mute);
+    }
+
+    .setup__body {
+      padding: 26px 20px 22px;
+      text-align: center;
+    }
+
+    .setup__t {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .setup__s {
+      margin-top: 6px;
+      font-size: 0.9375rem;
+      color: var(--text-dim);
+    }
+
+    .setup__go {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: var(--tap);
+      margin-top: 16px;
+      border-radius: 12px;
+      background: var(--red-btn);
+      color: var(--on-red);
+      font-size: 1.0625rem;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .actions {
+      position: sticky;
+      bottom: 0;
+      z-index: 5;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 16px -16px 0;
+      padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+    }
+
+    .btn {
+      min-height: 64px;
+      border-radius: 14px;
+      font-size: 1.125rem;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      transition: background-color 120ms ease, border-color 120ms ease, transform 80ms ease;
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--text);
+      outline-offset: 3px;
+    }
+
+    .btn--skip {
+      background: var(--surface);
+      border: 2px solid var(--text-dim);
+      color: var(--text-dim);
+    }
+
+    .btn--take {
+      background: var(--red-btn);
+      color: var(--on-red);
+    }
+
+    .sheet-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.42);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      opacity: 0;
+      transition: opacity 240ms ease;
+    }
+
+    .sheet-overlay--open {
+      opacity: 1;
+    }
+
+    .sheet-overlay[hidden] {
+      display: none;
+    }
+
+    .sheet {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      max-height: 90dvh;
+      background: var(--surface);
+      border-radius: 20px 20px 0 0;
+      box-shadow: 0 -8px 34px rgba(0, 0, 0, 0.22);
+      transform: translateY(100%);
+      transition: transform 320ms cubic-bezier(0.2, 0.85, 0.3, 1.04), opacity 240ms ease;
+    }
+
+    .sheet--open {
+      transform: translateY(0);
+    }
+
+    .sheet__grab {
+      flex-shrink: 0;
+      width: 40px;
+      height: 5px;
+      margin: 10px auto 0;
+      border-radius: 999px;
+      background: var(--border-strong);
+    }
+
+    .sheet__head {
+      flex-shrink: 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px 14px;
+    }
+
+    .sheet__title {
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: -0.025em;
+    }
+
+    .sheet__sub {
+      margin-top: 2px;
+      font-size: 0.9375rem;
+      color: var(--text-dim);
+    }
+
+    .sheet__x {
+      flex: 0 0 auto;
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--surface-2);
+      font-size: 1.5rem;
+      line-height: 1;
+      color: var(--text-dim);
+    }
+
+    .quick {
+      flex-shrink: 0;
+      margin: 0 16px;
+      padding: 16px;
+      border-radius: 12px;
+      background: var(--grade-a-tint);
+      border: 1px solid var(--grade-a);
+      text-align: center;
+    }
+
+    .quick__k {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--grade-a);
+    }
+
+    .quick__v {
+      margin-top: 5px;
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: var(--grade-a);
+    }
+
+    .quick__s {
+      margin-top: 4px;
+      font-size: 0.8125rem;
+      color: var(--text-dim);
+    }
+
+    .seg {
+      flex-shrink: 0;
+      display: flex;
+      gap: 4px;
+      margin: 14px 16px 0;
+      padding: 4px;
+      background: var(--surface-2);
+      border-radius: 12px;
+    }
+
+    .seg__b {
+      flex: 1;
+      min-height: 48px;
+      border: 2px solid transparent;
+      border-radius: 9px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-dim);
+      transition: background-color 160ms ease, color 160ms ease;
+    }
+
+    .seg__b--on {
+      background: var(--surface);
+      border: 2px solid var(--text);
+      color: var(--text);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    }
+
+    .colhead {
+      flex-shrink: 0;
+      display: flex;
+      margin-top: 16px;
+      padding: 0 16px 8px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--text-mute);
+    }
+
+    .colhead span:first-child {
+      flex: 0 0 128px;
+    }
+
+    .list {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+
+    .r {
+      position: relative;
+      display: flex;
+      align-items: center;
+      min-height: 58px;
+      padding: 0 16px;
+    }
+
+    .r+.r::before {
+      content: "";
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      top: 0;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .r__mi {
+      flex: 0 0 128px;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      font-family: var(--font-num);
+      font-variant-numeric: tabular-nums;
+      color: var(--text-dim);
+    }
+
+    .r__mi b {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+    }
+
+    .r__mi i {
+      font-style: normal;
+      font-size: 0.8125rem;
+      color: var(--text-mute);
+    }
+
+    .r__pay {
+      display: flex;
+      align-items: baseline;
+      font-family: var(--font-num);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.045em;
+    }
+
+    .r__cur {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-mute);
+      margin-right: 1px;
+    }
+
+    .r__d {
+      font-size: 1.875rem;
+      font-weight: 800;
+    }
+
+    .r__c {
+      font-size: 1.0625rem;
+      font-weight: 700;
+      color: var(--text-dim);
+    }
+
+    .r--here {
+      background: var(--red-tint);
+    }
+
+    .r--here::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--red);
+    }
+
+    .r--here .r__mi,
+    .r--here .r__c {
+      color: var(--text);
+    }
+
+    .r__flag {
+      margin-left: auto;
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: var(--red);
+    }
+
+    .sheet__foot {
+      flex-shrink: 0;
+      padding: 14px 16px calc(18px + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--border);
+      background: var(--surface-2);
+      font-size: 0.9375rem;
+      color: var(--text-dim);
+      line-height: 1.45;
+    }
+
+    .sheet__foot b {
+      color: var(--text);
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 10px;
+    }
+
+    .chips span {
+      font-family: var(--font-num);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px 7px;
+    }
+
+    @media (hover: hover) {
+      .topbar__sheet:hover {
+        border-color: var(--red);
+      }
+
+      .btn--skip:hover {
+        border-color: var(--text-dim);
+        color: var(--text);
+      }
+
+      .btn--take:hover,
+      .setup__go:hover {
+        background: var(--red-press);
+      }
+
+      .sheet__x:hover {
+        background: var(--border);
+        color: var(--text);
+      }
+
+      .credit__link:hover {
+        color: var(--text);
+      }
+    }
+
+    @media (max-width: 360px) {
+      .verdict {
+        gap: 12px;
+        padding: 16px 12px;
+      }
+
+      .dial {
+        width: 88px;
+        height: 88px;
+      }
+
+      .dial__letter {
+        font-size: 2.5rem;
+      }
+
+      .verdict__big {
+        font-size: 2rem;
+      }
+
+      .facts__v {
+        font-size: 1.0625rem;
+      }
+
+      .r__mi,
+      .colhead span:first-child {
+        flex: 0 0 96px;
+      }
+    }
+
+    @media (min-width: 620px) {
+      body {
+        font-size: 1.125rem;
+      }
+
+      .app {
+        max-width: 560px;
+      }
+
+      .content {
+        padding: 20px 20px 0;
+      }
+
+      .actions {
+        margin: 20px -20px 0;
+        padding: 14px 20px calc(16px + env(safe-area-inset-bottom));
+      }
+
+      .ask__input {
+        font-size: 1.875rem;
+      }
+
+      .verdict__big {
+        font-size: 3rem;
+      }
+
+      .dial {
+        width: 120px;
+        height: 120px;
+      }
+
+      .dial__letter {
+        font-size: 3.5rem;
+      }
+    }
+
+    @media (min-width: 900px) {
+      body {
+        padding-bottom: 40px;
+      }
+
+      .app {
+        max-width: 1040px;
+        min-height: 0;
+      }
+
+      .topbar {
+        position: static;
+        padding: 16px 24px;
+      }
+
+      .topbar__mark {
+        font-size: 1.5rem;
+      }
+
+      .today__v {
+        font-size: 1.5rem;
+      }
+
+      .today__k {
+        font-size: 0.8125rem;
+      }
+
+      .content {
+        padding: 24px 24px 0;
+      }
+
+      #calc-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 20px;
+        align-items: start;
+      }
+
+      #calc-body[hidden] {
+        display: none;
+      }
+
+      .offer-card {
+        grid-column: 1;
+        grid-row: 1;
+      }
+
+      #verdict {
+        grid-column: 2;
+        grid-row: 1;
+        margin-top: 0;
+      }
+
+      .actions {
+        grid-column: 2;
+        grid-row: 2;
+        position: static;
+        margin: 0;
+        padding: 0;
+        background: none;
+        border-top: 0;
+      }
+
+      .card__pad {
+        padding: 20px;
+      }
+
+      .ask__input {
+        font-size: 2rem;
+      }
+
+      .verdict {
+        gap: 20px;
+        padding: 24px 20px;
+      }
+
+      .verdict__big {
+        font-size: 3.25rem;
+      }
+
+      .dial {
+        width: 128px;
+        height: 128px;
+      }
+
+      .dial__letter {
+        font-size: 3.75rem;
+      }
+
+      .call {
+        padding: 15px 16px;
+        font-size: 1.5rem;
+      }
+
+      .facts__v {
+        font-size: 1.375rem;
+      }
+
+      .sheet-overlay {
+        align-items: center;
+        padding: 24px;
+      }
+
+      .sheet {
+        max-width: 560px;
+        max-height: 84vh;
+        max-height: 84dvh;
+        border-radius: 18px;
+        opacity: 0;
+        transform: translateY(14px) scale(0.97);
+      }
+
+      .sheet--open {
+        opacity: 1;
+        transform: none;
+      }
+
+      .sheet__grab {
+        display: none;
+      }
+
+      .sheet__foot {
+        padding-bottom: 18px;
+      }
+    }
+
+    @media (max-height: 540px) and (orientation: landscape) {
+      .topbar,
+      .actions {
+        position: static;
+      }
+
+      .dial {
+        width: 84px;
+        height: 84px;
+      }
+
+      .dial__letter {
+        font-size: 2.5rem;
+      }
+
+      .verdict {
+        padding: 14px 16px;
+      }
+
+      .verdict__big {
+        font-size: 2.25rem;
+      }
+
+      .ask__control {
+        min-height: 48px;
+      }
+
+      .ask__input {
+        font-size: 1.5rem;
+      }
+
+      .btn {
+        min-height: 50px;
+      }
+
+      .call {
+        padding: 9px 16px;
+        font-size: 1.125rem;
+      }
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <header class="topbar">
+      <span class="topbar__mark">DashCalc</span>
+      <button class="topbar__sheet" id="sheet-open" type="button">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
+          <rect x="2" y="2.5" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.6" />
+          <path d="M5 6h6M5 9h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+        </svg>
+        Cheat sheet
+      </button>
+    </header>
+
+        <div class="today">
+      <div class="today__cell">
+        <div class="today__v" id="today-seen">0</div>
+        <div class="today__k">offers seen</div>
+      </div>
+      <div class="today__cell">
+        <div class="today__v" id="today-taken">0</div>
+        <div class="today__k">you took</div>
+      </div>
+      <div class="today__cell">
+        <div class="today__v" id="today-hourly">&mdash;</div>
+        <div class="today__k">an hour</div>
+      </div>
+    </div>
+
+    <main class="content">
+      <h1 class="vh">Offer calculator</h1>
+
+            <section class="card" id="no-setup" hidden>
+        <div class="setup__body">
+          <h2 class="setup__t">Set up your car first</h2>
+          <p class="setup__s">We need your gas mileage and your state before we can tell you what an offer is really
+            worth.</p>
+          <a class="setup__go" href="index.html">Go to setup</a>
+        </div>
+      </section>
+
+      <div id="calc-body">
+
+                <section class="card offer-card">
+          <div class="card__pad">
+            <div class="ask">
+              <label class="ask__q" for="offer-pay">How much do they pay?</label>
+              <div class="ask__control">
+                <span class="ask__sign" aria-hidden="true">$</span>
+                <input class="ask__input" id="offer-pay" name="offerPay" type="text" inputmode="decimal"
+                  enterkeyhint="next" autocomplete="off" placeholder="0.00">
+              </div>
+            </div>
+
+            <div class="ask">
+              <label class="ask__q" for="offer-miles">How many miles?</label>
+              <div class="ask__control">
+                <input class="ask__input" id="offer-miles" name="offerMiles" type="text" inputmode="decimal"
+                  enterkeyhint="done" autocomplete="off" placeholder="0.0">
+                <span class="ask__unit">miles</span>
+              </div>
+            </div>
+          </div>
+
+                    <details class="more">
+            <summary class="more__sum">Add more (optional)</summary>
+            <div class="more__body">
+              <div class="ask">
+                <label class="ask__q" for="offer-minutes">How many minutes?</label>
+                <div class="ask__control">
+                  <input class="ask__input" id="offer-minutes" name="offerMinutes" type="text" inputmode="numeric"
+                    enterkeyhint="next" autocomplete="off" placeholder="we'll guess">
+                  <span class="ask__unit">min</span>
+                </div>
+              </div>
+
+              <div class="ask">
+                <label class="ask__q" for="offer-store-miles">How far to the store?</label>
+                <div class="ask__control">
+                  <input class="ask__input" id="offer-store-miles" name="offerStoreMiles" type="text"
+                    inputmode="decimal" enterkeyhint="done" autocomplete="off" placeholder="0.0">
+                  <span class="ask__unit">miles</span>
+                </div>
+              </div>
+            </div>
+          </details>
+        </section>
+
+                <section class="card" id="verdict" data-grade="" style="--fill:0%">
+
+          <div id="verdict-empty">
+            <div class="empty">
+              <span class="empty__mark" aria-hidden="true">?</span>
+              <span class="empty__t">Type the offer above</span>
+              <span class="empty__s">You'll get an answer right away</span>
+            </div>
+          </div>
+
+          <div id="verdict-body" hidden>
+            <div class="verdict">
+              <div class="dial">
+                <div class="dial__in">
+                  <div class="dial__letter" id="verdict-letter">&mdash;</div>
+                  <div class="dial__word">Grade</div>
+                </div>
+              </div>
+              <div class="verdict__money">
+                <div class="verdict__big" id="verdict-hourly">$0.00</div>
+                <div class="verdict__sub">an hour,<br>after gas and taxes</div>
+              </div>
+            </div>
+
+                        <div class="call" id="verdict-call" aria-live="polite" aria-atomic="true">&mdash;</div>
+
+            <div class="facts">
+              <div class="facts__cell">
+                <div class="facts__v" id="fact-keep">&mdash;</div>
+                <div class="facts__k">you keep</div>
+              </div>
+              <div class="facts__cell">
+                <div class="facts__v" id="fact-time">&mdash;</div>
+                <div class="facts__k">how long</div>
+              </div>
+              <div class="facts__cell">
+                <div class="facts__v" id="fact-permile">&mdash;</div>
+                <div class="facts__k">a mile</div>
+              </div>
+            </div>
+
+            <details class="more">
+              <summary class="more__sum">See the math</summary>
+              <div class="more__body">
+                <div class="math__row">
+                  <span class="math__k">They pay you</span>
+                  <span class="math__dots"></span>
+                  <span class="math__v" id="math-pay">&mdash;</span>
+                </div>
+                <div class="math__row">
+                  <span class="math__k">Gas costs you</span>
+                  <span class="math__dots"></span>
+                  <span class="math__v math__v--neg" id="math-gas">&mdash;</span>
+                </div>
+                <div class="math__row">
+                  <span class="math__k">Save for taxes</span>
+                  <span class="math__dots"></span>
+                  <span class="math__v math__v--neg" id="math-tax">&mdash;</span>
+                </div>
+                <div class="math__rule"></div>
+                <div class="math__row math__row--total">
+                  <span class="math__k">You keep</span>
+                  <span class="math__dots"></span>
+                  <span class="math__v" id="math-keep">&mdash;</span>
+                </div>
+                <p class="math__note">Taxes are what you should set aside, not what you pay today.</p>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <div class="actions">
+          <button class="btn btn--skip" id="btn-skip" type="button">Skip it</button>
+          <button class="btn btn--take" id="btn-take" type="button">Take it</button>
+        </div>
+      </div>
+
+    </main>
+
+    <footer class="credit">
+      <span class="credit__text">Made by Xernosz</span>
+      <a class="credit__link" href="index.html">Change my setup</a>
+    </footer>
+  </div>
+
+    <div class="sheet-overlay" id="sheet-overlay" hidden>
+    <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+
+      <span class="sheet__grab" aria-hidden="true"></span>
+
+      <div class="sheet__head">
+        <div>
+          <h2 class="sheet__title" id="sheet-title">Cheat sheet</h2>
+          <p class="sheet__sub">What an offer should pay</p>
+        </div>
+        <button class="sheet__x" id="sheet-close" type="button" aria-label="Close">&times;</button>
+      </div>
+
+      <div class="quick">
+        <div class="quick__k">Easy way to remember</div>
+        <div class="quick__v" id="sheet-quick">&mdash;</div>
+        <div class="quick__s">Works for your car, your gas, your state</div>
+      </div>
+
+      <div class="seg" role="group" aria-label="Which line to show">
+        <button class="seg__b seg__b--on" id="seg-good" type="button" aria-pressed="true">Good</button>
+        <button class="seg__b" id="seg-great" type="button" aria-pressed="false">Great</button>
+      </div>
+
+      <div class="colhead">
+        <span>If it's this far</span>
+        <span>It should pay</span>
+      </div>
+
+      <div class="list" id="sheet-list">
+        <div class="r" data-mi="1">
+          <div class="r__mi"><b>1</b><i>mile</i></div>
+          <div class="r__pay"><span class="r__cur">$</span><span class="r__d">&mdash;</span><span class="r__c"></span>
+          </div>
+          <span class="r__flag" hidden>yours</span>
+        </div>
+        <div class="r" data-mi="2">
+          <div class="r__mi"><b>2</b><i>miles</i></div>
+          <div class="r__pay"><span class="r__cur">$</span><span class="r__d">&mdash;</span><span class="r__c"></span>
+          </div>
+          <span class="r__flag" hidden>yours</span>
+        </div>
+        <div class="r" data-mi="3">
+          <div class="r__mi"><b>3</b><i>miles</i></div>
+          <div class="r__pay"><span class="r__cur">$</span><span class="r__d">&mdash;</span><span class="r__c"></span>
+          </div>
+          <span class="r__flag" hidden>yours</span>
+        </div>
+        <div class="r" data-mi="4">
+          <div class="r__mi"><b>4</b><i>miles</i></div>
+          <div class="r__pay"><span class="r__cur">$</span><span class="r__d">&mdash;</span><span class="r__c"></span>
+          </div>
+          <span class="r__flag" hidden>yours</span>
+        </div>
+        <div class="r" data-mi="5">
+          <div class="r__mi"><b>5</b><i>miles</i></div>
+          <div class="r__pay"><span class="r__cur">$</span><span class="r__d">&mdash;</span><span class="r__c"></span>
+          </div>
+          <span class="r__flag" hidden>yours</span>
+        </div>
+        <div class="r" data-mi="6">
+          <div class="r__mi"><b>6</b><i>miles</i></div>
+          <div class="r__pay"><span class="r__cur">$</span><span class="r__d">&mdash;</span><span class="r__c"></span>
+          </div>
+          <span class="r__flag" hidden>yours</span>
+        </div>
+        <div class="r" data-mi="7">
+          <div class="r__mi"><b>7</b><i>miles</i></div>
+          <div class="r__pay"><span class="r__cur">$</span><span class="r__d">&mdash;</span><span class="r__c"></span>
+          </div>
+          <span class="r__flag" hidden>yours</span>
+        </div>
+        <div class="r" data-mi="8">
+          <div class="r__mi"><b>8</b><i>miles</i></div>
+          <div class="r__pay"><span class="r__cur">$</span><span class="r__d">&mdash;</span><span class="r__c"></span>
+          </div>
+          <span class="r__flag" hidden>yours</span>
+        </div>
+        <div class="r" data-mi="9">
+          <div class="r__mi"><b>9</b><i>miles</i></div>
+          <div class="r__pay"><span class="r__cur">$</span><span class="r__d">&mdash;</span><span class="r__c"></span>
+          </div>
+          <span class="r__flag" hidden>yours</span>
+        </div>
+        <div class="r" data-mi="10">
+          <div class="r__mi"><b>10</b><i>miles</i></div>
+          <div class="r__pay"><span class="r__cur">$</span><span class="r__d">&mdash;</span><span class="r__c"></span>
+          </div>
+          <span class="r__flag" hidden>yours</span>
+        </div>
+        <div class="r" data-mi="11">
+          <div class="r__mi"><b>11</b><i>miles</i></div>
+          <div class="r__pay"><span class="r__cur">$</span><span class="r__d">&mdash;</span><span class="r__c"></span>
+          </div>
+          <span class="r__flag" hidden>yours</span>
+        </div>
+        <div class="r" data-mi="12">
+          <div class="r__mi"><b>12</b><i>miles</i></div>
+          <div class="r__pay"><span class="r__cur">$</span><span class="r__d">&mdash;</span><span class="r__c"></span>
+          </div>
+          <span class="r__flag" hidden>yours</span>
+        </div>
+        <div class="r" data-mi="13">
+          <div class="r__mi"><b>13</b><i>miles</i></div>
+          <div class="r__pay"><span class="r__cur">$</span><span class="r__d">&mdash;</span><span class="r__c"></span>
+          </div>
+          <span class="r__flag" hidden>yours</span>
+        </div>
+        <div class="r" data-mi="14">
+          <div class="r__mi"><b>14</b><i>miles</i></div>
+          <div class="r__pay"><span class="r__cur">$</span><span class="r__d">&mdash;</span><span class="r__c"></span>
+          </div>
+          <span class="r__flag" hidden>yours</span>
+        </div>
+        <div class="r" data-mi="15">
+          <div class="r__mi"><b>15</b><i>miles</i></div>
+          <div class="r__pay"><span class="r__cur">$</span><span class="r__d">&mdash;</span><span class="r__c"></span>
+          </div>
+          <span class="r__flag" hidden>yours</span>
+        </div>
+      </div>
+
+      <div class="sheet__foot">
+        Pay less than this and you're making <b>under $20 an hour</b> once gas and taxes come out.
+        <div class="chips" id="sheet-chips">
+          <span>&mdash; mpg</span>
+          <span>&mdash; /gal</span>
+          <span>&mdash;</span>
+          <span>&mdash; min wait</span>
+          <span>&mdash; mph</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="calculator.js"></script>
+</body>
+
+</html>

@@ -1,31 +1,33 @@
-navigator.storage.persist();
+if (navigator.storage?.persist) {
+    navigator.storage.persist().catch(() => { });
+}
 
-let settings = {
-    mileGas: document.getElementById("mpg"),
+const inputs = {
+    mpg: document.getElementById("mpg"),
     gasPrice: document.getElementById("gas-price"),
-    taxLocale: document.getElementById("home-state"),
-    waitTime: document.getElementById("typical-wait"),
-    driveSpeed: document.getElementById("avg-speed")
+    homeState: document.getElementById("home-state"),
+    typicalWait: document.getElementById("typical-wait"),
+    avgSpeed: document.getElementById("avg-speed")
 };
 
 
 const gasMath = () => {
-    let x = Number(settings.mileGas.value);
-    let y = Number(settings.gasPrice.value);
-    let gasResult = document.getElementById("gas-cost-per-mile");
+    const mpg = Number(inputs.mpg.value);
+    const gasPrice = Number(inputs.gasPrice.value);
+    const gasResult = document.getElementById("gas-cost-per-mile");
 
-    if (settings.mileGas.value.trim() === "" || settings.gasPrice.value.trim() === "" ||
-        !Number.isFinite(x) || !Number.isFinite(y) || x <= 0) {
-        gasResult.textContent = "\u2014";
+    if (inputs.mpg.value.trim() === "" || inputs.gasPrice.value.trim() === "" ||
+        !Number.isFinite(mpg) || !Number.isFinite(gasPrice) || mpg <= 0 || gasPrice < 0) {
+        gasResult.textContent = "—";
         return;
     }
 
-    gasResult.textContent = "$" + (y / x).toFixed(3)
+    gasResult.textContent = "$" + (gasPrice / mpg).toFixed(3);
 };
 
 
-settings.mileGas.addEventListener("input", gasMath);
-settings.gasPrice.addEventListener("input", gasMath);
+inputs.mpg.addEventListener("input", gasMath);
+inputs.gasPrice.addEventListener("input", gasMath);
 
 
 const SELF_EMPLOYMENT_TAX_RATE = 0.153;
@@ -45,11 +47,11 @@ const STATE_TAX_RATES = {
 };
 
 const MILEAGE_RATES = [
-    { startDate: new Date("2026-01-01"), centsPerMile: 72.5 },
-    { startDate: new Date("2026-07-01"), centsPerMile: 76 }
+    { startDate: new Date(2026, 0, 1), centsPerMile: 72.5 },
+    { startDate: new Date(2026, 6, 1), centsPerMile: 76 }
 ];
 
-const getMileageRate = (today) => {
+const getCentsPerMile = (today) => {
     let currentRate = MILEAGE_RATES[0];
 
     for (const rate of MILEAGE_RATES) {
@@ -65,17 +67,17 @@ const taxMath = () => {
     const rateDisplay = document.getElementById("irs-rate-display");
     const perDollarDisplay = document.getElementById("tax-per-dollar");
 
-    const centsPerMile = getMileageRate(new Date());
+    const centsPerMile = getCentsPerMile(new Date());
     rateDisplay.textContent = centsPerMile + "¢/mi";
 
-    const selectedState = settings.taxLocale.value;
+    const state = inputs.homeState.value;
 
-    if (selectedState === "") {
+    if (state === "" || !Object.hasOwn(STATE_TAX_RATES, state)) {
         perDollarDisplay.textContent = "—";
         return;
     }
 
-    const stateRate = STATE_TAX_RATES[selectedState];
+    const stateRate = STATE_TAX_RATES[state];
     const totalRate = SELF_EMPLOYMENT_TAX_RATE + stateRate;
 
     perDollarDisplay.textContent = "$" + totalRate.toFixed(2);
@@ -83,14 +85,25 @@ const taxMath = () => {
 
 const SETTINGS_STORAGE_KEY = "dashcalc-settings";
 
+const loadSettings = () => {
+    const savedJson = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (savedJson === null) return { v: 1 };
+
+    try {
+        return JSON.parse(savedJson);
+    } catch {
+        return { v: 1 };
+    }
+};
+
 const onSave = () => {
     const settingsToSave = {
         v: 1,
-        mpg: settings.mileGas.value,
-        gasPrice: settings.gasPrice.value,
-        homeState: settings.taxLocale.value,
-        typicalWait: settings.waitTime.value,
-        avgSpeed: settings.driveSpeed.value
+        mpg: inputs.mpg.value,
+        gasPrice: inputs.gasPrice.value,
+        homeState: inputs.homeState.value,
+        typicalWait: inputs.typicalWait.value,
+        avgSpeed: inputs.avgSpeed.value
     };
 
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settingsToSave));
@@ -120,8 +133,7 @@ const dataPanelBody = document.getElementById("datapanel-body");
 const dataPanelClose = document.getElementById("datapanel-close");
 
 const saveEditedField = (event) => {
-    const savedJson = localStorage.getItem(SETTINGS_STORAGE_KEY);
-    const savedData = savedJson ? JSON.parse(savedJson) : {};
+    const savedData = loadSettings();
 
     const key = event.target.dataset.key;
     savedData[key] = event.target.textContent.trim();
@@ -137,8 +149,7 @@ const commitFieldOnEnter = (event) => {
 };
 
 const renderDataPanel = () => {
-    const savedJson = localStorage.getItem(SETTINGS_STORAGE_KEY);
-    const savedData = savedJson ? JSON.parse(savedJson) : {};
+    const savedData = loadSettings();
 
     dataPanelBody.replaceChildren();
 
@@ -162,7 +173,7 @@ const renderDataPanel = () => {
         if (key === "v") {
             row.classList.add("datapanel__row--readonly");
         } else {
-            valueSpan.contentEditable = "true";
+            valueSpan.contentEditable = "plaintext-only";
             valueSpan.addEventListener("blur", saveEditedField);
             valueSpan.addEventListener("keydown", commitFieldOnEnter);
         }
@@ -172,7 +183,14 @@ const renderDataPanel = () => {
     });
 };
 
+let closePanelTimeoutId = null;
+
 const openDataPanel = () => {
+    if (closePanelTimeoutId !== null) {
+        window.clearTimeout(closePanelTimeoutId);
+        closePanelTimeoutId = null;
+    }
+
     renderDataPanel();
     dataPanelOverlay.hidden = false;
     void dataPanel.offsetWidth;
@@ -183,8 +201,9 @@ const openDataPanel = () => {
 const closeDataPanel = () => {
     dataPanelOverlay.classList.remove("datapanel-overlay--open");
     dataPanel.classList.remove("datapanel--open");
-    window.setTimeout(() => {
+    closePanelTimeoutId = window.setTimeout(() => {
         dataPanelOverlay.hidden = true;
+        closePanelTimeoutId = null;
     }, 220);
 };
 
@@ -203,9 +222,23 @@ document.addEventListener("keydown", (event) => {
     }
 });
 
-settings.taxLocale.addEventListener("change", taxMath);
+inputs.homeState.addEventListener("change", taxMath);
 saveButton.addEventListener("click", onSave);
+
+const applySavedSettings = () => {
+    const saved = loadSettings();
+
+    if (saved.mpg !== undefined) inputs.mpg.value = saved.mpg;
+    if (saved.gasPrice !== undefined) inputs.gasPrice.value = saved.gasPrice;
+    if (saved.homeState !== undefined) inputs.homeState.value = saved.homeState;
+    if (saved.typicalWait !== undefined) inputs.typicalWait.value = saved.typicalWait;
+    if (saved.avgSpeed !== undefined) inputs.avgSpeed.value = saved.avgSpeed;
+
+    if (localStorage.getItem(SETTINGS_STORAGE_KEY) !== null) {
+        viewDataButton.hidden = false;
+    }
+};
+
+applySavedSettings();
+gasMath();
 taxMath();
-
-
-

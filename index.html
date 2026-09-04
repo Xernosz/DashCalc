@@ -1,135 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
-<!--fyi if ur reading this i think you can tell its vibecoded, i dont wanna learn html and especially not css so idc
-handle it, the backend ill learn on my own -->
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Set up your car once, then find out what a DoorDash offer really pays.">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1D1D1D" media="(prefers-color-scheme: dark)">
   <title>Setup &middot; DashCalc</title>
 
+  <link rel="stylesheet" href="tokens.css">
+
   <style>
-    /* ============ RESET ============ */
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
 
-    html {
-      -webkit-text-size-adjust: 100%;
-    }
-
-    body {
-      min-height: 100dvh;
-    }
-
-    input,
-    select,
-    button,
-    textarea {
-      font: inherit;
-      color: inherit;
-    }
-
-    button {
-      cursor: pointer;
-      background: none;
-      border: 0;
-    }
-
-    a {
-      color: inherit;
-    }
-
-    /* ============ TOKENS ============ */
-    /* Plain and bright, like a delivery app. One warm red is the brand and the
-       action colour - buttons, the wordmark, focus rings. Everything else is
-       black text on white cards. Red is never used just for decoration. */
-    :root {
-      --red: #EB1700;
-      /* brand + primary action */
-      --red-press: #B92F10;
-      /* pressed / darker red */
-      --red-tint: #FCEEE9;
-      /* faint red wash behind readouts */
-      --on-red: #FFFFFF;
-
-      --bg: #F7F6F4;
-      /* page behind the cards */
-      --surface: #FFFFFF;
-      /* card face */
-      --surface-2: #F2F1EF;
-      /* recessed rows, unit chips */
-
-      --text: #1C1C1C;
-      /* headings and values */
-      --text-dim: #6B6B6B;
-      /* labels, helper text, units */
-      --text-mute: #8C8C8C;
-      /* fine print */
-
-      --border: #E3E1DE;
-      /* card and input outlines */
-      --border-strong: #CFCCC8;
-      /* input outline, a touch darker */
-
-      --good: #12824A;
-      /* the "saved" confirmation only */
-
-      --tap: 56px;
-      /* min tap target - one hand, in a car */
-      --radius: 14px;
-
-      --font: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      --font-num: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --red: #E0431F;
-        --red-press: #C7381A;
-        --red-tint: #2A1712;
-        --on-red: #FFFFFF;
-
-        --bg: #121212;
-        --surface: #1D1D1D;
-        --surface-2: #262626;
-
-        --text: #F1F0EE;
-        --text-dim: #8f8d8a;
-        --text-mute: #7C7A77;
-
-        --border: #333230;
-        --border-strong: #454341;
-
-        --good: #4ADE80;
-      }
-    }
-
-    /* ============ BASE ============ */
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--font);
-      line-height: 1.5;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* ============ SHELL ============ */
-    .app {
-      max-width: 480px;
-      margin: 0 auto;
-      min-height: 100dvh;
-      background: var(--bg);
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* ============ TOP BAR ============ */
     .topbar {
       position: sticky;
       top: 0;
@@ -156,7 +40,6 @@ handle it, the backend ill learn on my own -->
       color: var(--text-dim);
     }
 
-    /* ============ CONTENT ============ */
     .content {
       flex: 1;
       padding: 24px 20px 0;
@@ -179,7 +62,6 @@ handle it, the backend ill learn on my own -->
       color: var(--text-dim);
     }
 
-    /* ============ CARD ============ */
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -209,7 +91,6 @@ handle it, the backend ill learn on my own -->
       margin-top: 16px;
     }
 
-    /* ============ FIELD ============ */
     .field+.field {
       margin-top: 16px;
     }
@@ -275,7 +156,6 @@ handle it, the backend ill learn on my own -->
       white-space: nowrap;
     }
 
-    /* strip the browser's number spinners */
     .field__input::-webkit-outer-spin-button,
     .field__input::-webkit-inner-spin-button {
       -webkit-appearance: none;
@@ -287,7 +167,6 @@ handle it, the backend ill learn on my own -->
       appearance: textfield;
     }
 
-    /* select variant: custom caret, no native chrome */
     .field__control--select {
       position: relative;
     }
@@ -323,7 +202,6 @@ handle it, the backend ill learn on my own -->
       color: var(--text);
     }
 
-    /* ============ READOUT (live result rows) ============ */
     .readout {
       margin-top: 16px;
       display: flex;
@@ -359,7 +237,6 @@ handle it, the backend ill learn on my own -->
       font-size: 1.0625rem;
     }
 
-    /* ============ SECONDARY LINK BUTTON ============ */
     .linkbtn {
       display: flex;
       align-items: center;
@@ -377,7 +254,6 @@ handle it, the backend ill learn on my own -->
       transition: border-color 150ms ease;
     }
 
-    .linkbtn:hover,
     .linkbtn:focus-visible {
       border-color: var(--red);
       outline: none;
@@ -391,7 +267,6 @@ handle it, the backend ill learn on my own -->
       transform: rotate(45deg);
     }
 
-    /* ============ SAVE BAR ============ */
     .savebar {
       position: sticky;
       bottom: 0;
@@ -411,10 +286,6 @@ handle it, the backend ill learn on my own -->
       font-size: 1.0625rem;
       letter-spacing: 0.01em;
       transition: background-color 120ms ease, transform 80ms ease;
-    }
-
-    .savebar__button:hover {
-      background: var(--red-press);
     }
 
     .savebar__button:active {
@@ -437,11 +308,13 @@ handle it, the backend ill learn on my own -->
       font-size: 0.875rem;
       font-weight: 600;
       color: var(--good);
+      visibility: hidden;
       opacity: 0;
       transform: translateY(4px) scale(0.98);
     }
 
     .savebar__status--show {
+      visibility: visible;
       animation: savebar-pop 380ms cubic-bezier(0.2, 0.9, 0.3, 1.3) forwards;
     }
 
@@ -498,12 +371,12 @@ handle it, the backend ill learn on my own -->
       transform: translateY(2px);
     }
 
-    .savebar__viewdata--show {
-      animation: savebar-fineprint-in 320ms ease forwards 420ms;
+    .savebar__viewdata[hidden] {
+      display: none;
     }
 
-    .savebar__viewdata:hover {
-      color: var(--text-dim);
+    .savebar__viewdata--show {
+      animation: savebar-fineprint-in 320ms ease forwards 420ms;
     }
 
     @keyframes savebar-fineprint-in {
@@ -520,7 +393,6 @@ handle it, the backend ill learn on my own -->
       color: var(--text-mute);
     }
 
-    /* ============ DATA PANEL (view/edit saved storage) ============ */
     .datapanel-overlay {
       position: fixed;
       inset: 0;
@@ -579,8 +451,8 @@ handle it, the backend ill learn on my own -->
     }
 
     .datapanel__close {
-      width: 28px;
-      height: 28px;
+      width: 44px;
+      height: 44px;
       flex-shrink: 0;
       display: flex;
       align-items: center;
@@ -589,11 +461,6 @@ handle it, the backend ill learn on my own -->
       line-height: 1;
       color: rgba(255, 255, 255, 0.6);
       border-radius: 8px;
-    }
-
-    .datapanel__close:hover {
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
     }
 
     .datapanel__body {
@@ -615,7 +482,7 @@ handle it, the backend ill learn on my own -->
     }
 
     .datapanel__colon {
-      color: rgba(255, 255, 255, 0.3);
+      color: rgba(255, 255, 255, 0.55);
     }
 
     .datapanel__value {
@@ -633,8 +500,8 @@ handle it, the backend ill learn on my own -->
     }
 
     .datapanel__row--readonly .datapanel__value {
-      color: rgba(255, 255, 255, 0.35);
-      border-bottom-color: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.6);
+      border-bottom-color: rgba(255, 255, 255, 0.2);
       cursor: default;
     }
 
@@ -642,46 +509,25 @@ handle it, the backend ill learn on my own -->
       padding: 8px 14px 12px;
       border-top: 1px solid rgba(255, 255, 255, 0.08);
       font-size: 0.6875rem;
-      color: rgba(255, 255, 255, 0.35);
+      color: rgba(255, 255, 255, 0.62);
     }
 
-    /* ============ CREDIT (maker's mark) ============ */
-    .credit {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      padding: 22px 20px calc(26px + env(safe-area-inset-bottom));
-      text-align: center;
-    }
+    @media (hover: hover) {
+      .linkbtn:hover {
+        border-color: var(--red);
+      }
 
-    .credit::before {
-      content: "";
-      width: 28px;
-      height: 1px;
-      background: var(--border-strong);
-    }
+      .savebar__button:hover {
+        background: var(--red-press);
+      }
 
-    .credit__text {
-      font-size: 0.6875rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.22em;
-      color: var(--text-mute);
-    }
+      .savebar__viewdata:hover {
+        color: var(--text-dim);
+      }
 
-    .credit__name {
-      color: var(--text-dim);
-    }
-
-    /* ============ MOTION ============ */
-    @media (prefers-reduced-motion: reduce) {
-
-      *,
-      *::before,
-      *::after {
-        animation-duration: 0.01ms !important;
-        transition-duration: 0.01ms !important;
+      .datapanel__close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
       }
     }
   </style>
@@ -703,13 +549,9 @@ handle it, the backend ill learn on my own -->
           the calculator a good estimate for you personally.</p>
       </div>
 
-      <!-- The whole setup is one form. The Save button is type="button" so the page
-           never reloads on its own; your JavaScript owns what "save" does. Each field
-           has an id (grab one value) AND a name (grab the whole form at once). -->
-      <form id="setup-form">
+            <form id="setup-form">
 
-        <!-- ---------- VEHICLE ---------- -->
-        <section class="card">
+                <section class="card">
           <h2 class="card__title">Vehicle</h2>
 
           <div class="field">
@@ -743,8 +585,7 @@ handle it, the backend ill learn on my own -->
           </div>
         </section>
 
-        <!-- ---------- TAXES ---------- -->
-        <section class="card">
+                <section class="card">
           <h2 class="card__title">Taxes</h2>
           <p class="card__note">Self-employment tax is <strong>15.3%</strong> for everyone in this field. Add
             your state so we can calculate what you set aside.</p>
@@ -821,8 +662,7 @@ handle it, the backend ill learn on my own -->
           </div>
         </section>
 
-        <!-- ---------- CONDITIONS ---------- -->
-        <section class="card">
+                <section class="card">
           <h2 class="card__title">Your specifics</h2>
           <p class="card__note">Averages across <strong>all</strong> your dashing &mdash; just a general estimate as it
             isn't as
@@ -850,7 +690,7 @@ handle it, the backend ill learn on my own -->
         </section>
 
         <a class="linkbtn" href="calculator.html">
-          <span>Hit once you've saved &mdash;> Calculator!</span>
+          <span>Go to the calculator</span>
           <span class="linkbtn__arrow" aria-hidden="true"></span>
         </a>
 
@@ -892,4 +732,4 @@ handle it, the backend ill learn on my own -->
   <script src="app.js"></script>
 </body>
 
-</html>1
+</html>
