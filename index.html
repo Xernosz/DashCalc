@@ -429,10 +429,88 @@ handle it, the backend ill learn on my own -->
     .savebar__status {
       margin-top: 8px;
       min-height: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
       text-align: center;
       font-size: 0.875rem;
       font-weight: 600;
       color: var(--good);
+      opacity: 0;
+      transform: translateY(4px) scale(0.98);
+    }
+
+    .savebar__status--show {
+      animation: savebar-pop 380ms cubic-bezier(0.2, 0.9, 0.3, 1.3) forwards;
+    }
+
+    .savebar__check-ring {
+      stroke-dasharray: 63;
+      stroke-dashoffset: 63;
+    }
+
+    .savebar__check-mark {
+      stroke-dasharray: 20;
+      stroke-dashoffset: 20;
+    }
+
+    .savebar__status--show .savebar__check-ring {
+      animation: savebar-draw 420ms ease forwards 60ms;
+    }
+
+    .savebar__status--show .savebar__check-mark {
+      animation: savebar-draw 260ms ease forwards 340ms;
+    }
+
+    @keyframes savebar-pop {
+      0% {
+        opacity: 0;
+        transform: translateY(6px) scale(0.94);
+      }
+
+      60% {
+        opacity: 1;
+        transform: translateY(-1px) scale(1.03);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes savebar-draw {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+
+    .savebar__viewdata {
+      display: block;
+      margin: 4px auto 0;
+      padding: 2px 4px;
+      font-size: 0.75rem;
+      color: var(--text-mute);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      opacity: 0;
+      transform: translateY(2px);
+    }
+
+    .savebar__viewdata--show {
+      animation: savebar-fineprint-in 320ms ease forwards 420ms;
+    }
+
+    .savebar__viewdata:hover {
+      color: var(--text-dim);
+    }
+
+    @keyframes savebar-fineprint-in {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .savebar__fineprint {
@@ -440,6 +518,131 @@ handle it, the backend ill learn on my own -->
       text-align: center;
       font-size: 0.75rem;
       color: var(--text-mute);
+    }
+
+    /* ============ DATA PANEL (view/edit saved storage) ============ */
+    .datapanel-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      opacity: 0;
+      transition: opacity 220ms ease;
+    }
+
+    .datapanel-overlay--open {
+      opacity: 1;
+    }
+
+    .datapanel {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      z-index: 41;
+      width: min(320px, calc(100% - 48px));
+      max-height: 70vh;
+      overflow-y: auto;
+      background: rgba(20, 18, 16, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(16px) saturate(160%);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      opacity: 0;
+      filter: blur(6px);
+      transform: translate(-50%, -46%) scale(0.94);
+      transition: opacity 240ms ease, transform 260ms cubic-bezier(0.2, 0.85, 0.3, 1.15), filter 240ms ease;
+    }
+
+    .datapanel--open {
+      opacity: 1;
+      filter: blur(0);
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .datapanel__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 8px 10px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .datapanel__title {
+      font-family: var(--font-num);
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.55);
+      letter-spacing: 0.01em;
+    }
+
+    .datapanel__close {
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.125rem;
+      line-height: 1;
+      color: rgba(255, 255, 255, 0.6);
+      border-radius: 8px;
+    }
+
+    .datapanel__close:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    .datapanel__body {
+      padding: 12px 14px;
+      font-family: var(--font-num);
+      font-size: 0.8125rem;
+    }
+
+    .datapanel__row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      padding: 5px 0;
+    }
+
+    .datapanel__key {
+      color: #7dd3fc;
+      white-space: nowrap;
+    }
+
+    .datapanel__colon {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .datapanel__value {
+      color: #fbbf24;
+      min-width: 16px;
+      padding-bottom: 1px;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.25);
+      outline: none;
+      cursor: text;
+    }
+
+    .datapanel__value:focus {
+      border-bottom-color: var(--red);
+      border-bottom-style: solid;
+    }
+
+    .datapanel__row--readonly .datapanel__value {
+      color: rgba(255, 255, 255, 0.35);
+      border-bottom-color: rgba(255, 255, 255, 0.08);
+      cursor: default;
+    }
+
+    .datapanel__hint {
+      padding: 8px 14px 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.6875rem;
+      color: rgba(255, 255, 255, 0.35);
     }
 
     /* ============ CREDIT (maker's mark) ============ */
@@ -653,8 +856,30 @@ handle it, the backend ill learn on my own -->
 
         <div class="savebar">
           <button class="savebar__button" id="save-setup" type="button">Save setup</button>
-          <p class="savebar__status" id="save-status" role="status" aria-live="polite"></p>
+          <p class="savebar__status" id="save-status" role="status" aria-live="polite">
+            <svg class="savebar__check" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+              <circle class="savebar__check-ring" cx="12" cy="12" r="10" fill="none" stroke="currentColor"
+                stroke-width="2" />
+              <path class="savebar__check-mark" d="M7 12.5l3 3 7-7" fill="none" stroke="currentColor"
+                stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span class="savebar__status-text">Saved</span>
+          </p>
+          <button class="savebar__viewdata" id="view-saved-data" type="button" hidden>View your saved data</button>
           <p class="savebar__fineprint">No account, no tracking. Every number stays on this phone. </p>
+        </div>
+
+        <div class="datapanel-overlay" id="datapanel-overlay" hidden>
+          <div class="datapanel" id="datapanel" role="dialog" aria-modal="true" aria-label="Your saved data">
+            <div class="datapanel__head">
+              <span class="datapanel__title">localStorage <strong>&middot;</strong> dashcalc-settings</span>
+              <button class="datapanel__close" id="datapanel-close" type="button" aria-label="Close">&times;</button>
+            </div>
+            <div class="datapanel__body" id="datapanel-body"></div>
+            <p class="datapanel__hint">tap a value to edit &mdash; changes save to your browser<br><strong>V is your
+                version
+                number, and is unchangable.</strong></p>
+          </div>
         </div>
 
       </form>
@@ -667,4 +892,4 @@ handle it, the backend ill learn on my own -->
   <script src="app.js"></script>
 </body>
 
-</html>
+</html>1

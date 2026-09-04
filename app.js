@@ -1,3 +1,4 @@
+navigator.storage.persist();
 
 let settings = {
     mileGas: document.getElementById("mpg"),
@@ -7,46 +8,6 @@ let settings = {
     driveSpeed: document.getElementById("avg-speed")
 };
 
-/* let date = new Date(); // stores date of when page is opened
-let current = [date.getMonth() + 1, date.getDate(), date.getFullYear()];
-console.log(current);
-^^ my code then next step
-You didn't paste the updated code, so I'm going off your last version with the guard refs fixed. One thing still standing out there: current is [9, 1, 2026] — an array of numbers.
-That format is a dead end for Step 14, because you can't easily ask "is this between two dates." You'll want today as a string like "2026-09-01" instead. More on that below.
-First, the tax thing — what is this rate?
-When you drive for DoorDash you're self-employed. You owe tax on your profit, not on everything DoorDash pays you. 
-Profit = money in − business costs. Your car is a business cost: gas, tires, oil, insurance, the car losing value over time.
-Tracking every receipt is miserable, so the IRS offers a shortcut: skip all that, just deduct a flat number of cents for every mile you drove for work. 
-That flat number is the "standard mileage rate." "Deduct" means "subtract from the income they tax you on."
-Example: you earn $80 on an offer and drive 100 miles for it.
-- Without the deduction: taxed on $80.
-- With it: taxed on $80 − (100 × $0.725) = $7.50.
-The mileage deduction is huge — it wipes out most of the taxable income. Get the rate wrong and the driver either overpays tax or underpays and owes a penalty. That's why the app needs the exact rate.
-Why it's a table and not one number: the rate changed halfway through 2026. An offer driven June 28 uses 72.5¢; one driven July 3 uses 76¢. And every January the IRS picks a new number. So "what's the rate" really means "what's the rate on this date."
-The code structure, plainly
-Picture a paper table taped to your dash:
-
-FROM          TO            RATE
-Jan 1 2026    Jun 30 2026   72.5
-Jul 1 2026    Dec 31 2026   76
-
-One row of that table, in JavaScript, is an object — a bundle of labeled values:
-{ start: "2026-01-01", end: "2026-06-30", rate: 72.5 }
-The whole table is those rows sitting in an array (a numbered list):
-[ { row 1 }, { row 2 } ]
-Looking up the rate = walk down the list, find the row whose FROM–TO window contains today, read its rate.
-The walking-and-finding is one method: .find(). You give .find() a yes/no question to ask about a single row. It asks row 1 the question; if the answer is no, it asks row 2; the instant a row answers yes, .find() hands you that entire row object. Then you read .rate off it.
-The yes/no question for one row is just: today is >= row.start AND today is <= row.end. If you store every date as a "2026-06-30"-style string, those >= / <= comparisons work directly, because that date format sorts alphabetically in the same order as calendar time.
-If no row matches (you forgot to add 2027's rate someday), .find() gives back undefined — check for that and show \u2014, same as your gas guard.
-Your move, in order
-1. Re-read the tax section until it clicks. No code yet.
-2. Replace current with today as a string: "2026-09-01". You can build it from your date object's pieces (pad month and day to two digits with padStart) or slice it out of date.toISOString().
-3. Write the rate table: an array holding two objects, each with start, end, rate.
-4. Call .find() on that array with the between-check question to get the matching row.
-5. If the result is undefined, show the dash. Otherwise put the row's rate into irs-rate-display via .textContent, formatted how you like ("72.5¢").
-6. Test: temporarily set date to new Date("2026-06-15"), confirm you get 72.5, then a July date for 76.
-Next: do step 2 — get today as a "YYYY-MM-DD" string and console.log it to confirm it reads 2026-09-01.
-*/
 
 const gasMath = () => {
     let x = Number(settings.mileGas.value);
@@ -65,5 +26,186 @@ const gasMath = () => {
 
 settings.mileGas.addEventListener("input", gasMath);
 settings.gasPrice.addEventListener("input", gasMath);
+
+
+const SELF_EMPLOYMENT_TAX_RATE = 0.153;
+
+const STATE_TAX_RATES = {
+    AL: 0.0500, AK: 0.0000, AZ: 0.0250, AR: 0.0440, CA: 0.0930,
+    CO: 0.0440, CT: 0.0499, DE: 0.0660, DC: 0.0850, FL: 0.0000,
+    GA: 0.0539, HI: 0.0790, ID: 0.0580, IL: 0.0495, IN: 0.0305,
+    IA: 0.0380, KS: 0.0570, KY: 0.0400, LA: 0.0425, ME: 0.0715,
+    MD: 0.0575, MA: 0.0500, MI: 0.0425, MN: 0.0785, MS: 0.0470,
+    MO: 0.0480, MT: 0.0590, NE: 0.0520, NV: 0.0000, NH: 0.0000,
+    NJ: 0.0637, NM: 0.0590, NY: 0.0685, NC: 0.0450, ND: 0.0250,
+    OH: 0.0350, OK: 0.0475, OR: 0.0990, PA: 0.0307, RI: 0.0599,
+    SC: 0.0620, SD: 0.0000, TN: 0.0000, TX: 0.0000, UT: 0.0465,
+    VT: 0.0660, VA: 0.0575, WA: 0.0000, WV: 0.0482, WI: 0.0765,
+    WY: 0.0000
+};
+
+const MILEAGE_RATES = [
+    { startDate: new Date("2026-01-01"), centsPerMile: 72.5 },
+    { startDate: new Date("2026-07-01"), centsPerMile: 76 }
+];
+
+const getMileageRate = (today) => {
+    let currentRate = MILEAGE_RATES[0];
+
+    for (const rate of MILEAGE_RATES) {
+        if (today >= rate.startDate) {
+            currentRate = rate;
+        }
+    }
+
+    return currentRate.centsPerMile;
+};
+
+const taxMath = () => {
+    const rateDisplay = document.getElementById("irs-rate-display");
+    const perDollarDisplay = document.getElementById("tax-per-dollar");
+
+    const centsPerMile = getMileageRate(new Date());
+    rateDisplay.textContent = centsPerMile + "¢/mi";
+
+    const selectedState = settings.taxLocale.value;
+
+    if (selectedState === "") {
+        perDollarDisplay.textContent = "—";
+        return;
+    }
+
+    const stateRate = STATE_TAX_RATES[selectedState];
+    const totalRate = SELF_EMPLOYMENT_TAX_RATE + stateRate;
+
+    perDollarDisplay.textContent = "$" + totalRate.toFixed(2);
+};
+
+const SETTINGS_STORAGE_KEY = "dashcalc-settings";
+
+const onSave = () => {
+    const settingsToSave = {
+        v: 1,
+        mpg: settings.mileGas.value,
+        gasPrice: settings.gasPrice.value,
+        homeState: settings.taxLocale.value,
+        typicalWait: settings.waitTime.value,
+        avgSpeed: settings.driveSpeed.value
+    };
+
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settingsToSave));
+    showSavedConfirmation();
+};
+
+const saveButton = document.getElementById("save-setup");
+const saveStatus = document.getElementById("save-status");
+const viewDataButton = document.getElementById("view-saved-data");
+
+const showSavedConfirmation = () => {
+    saveStatus.classList.remove("savebar__status--show");
+    void saveStatus.offsetWidth;
+    saveStatus.classList.add("savebar__status--show");
+
+    viewDataButton.hidden = false;
+    viewDataButton.classList.remove("savebar__viewdata--show");
+    void viewDataButton.offsetWidth;
+    viewDataButton.classList.add("savebar__viewdata--show");
+};
+
+const DATA_PANEL_FIELDS = ["v", "mpg", "gasPrice", "homeState", "typicalWait", "avgSpeed"];
+
+const dataPanelOverlay = document.getElementById("datapanel-overlay");
+const dataPanel = document.getElementById("datapanel");
+const dataPanelBody = document.getElementById("datapanel-body");
+const dataPanelClose = document.getElementById("datapanel-close");
+
+const saveEditedField = (event) => {
+    const savedJson = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    const savedData = savedJson ? JSON.parse(savedJson) : {};
+
+    const key = event.target.dataset.key;
+    savedData[key] = event.target.textContent.trim();
+
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(savedData));
+};
+
+const commitFieldOnEnter = (event) => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        event.target.blur();
+    }
+};
+
+const renderDataPanel = () => {
+    const savedJson = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    const savedData = savedJson ? JSON.parse(savedJson) : {};
+
+    dataPanelBody.replaceChildren();
+
+    DATA_PANEL_FIELDS.forEach((key) => {
+        const row = document.createElement("div");
+        row.className = "datapanel__row";
+
+        const keySpan = document.createElement("span");
+        keySpan.className = "datapanel__key";
+        keySpan.textContent = "\"" + key + "\"";
+
+        const colonSpan = document.createElement("span");
+        colonSpan.className = "datapanel__colon";
+        colonSpan.textContent = ":";
+
+        const valueSpan = document.createElement("span");
+        valueSpan.className = "datapanel__value";
+        valueSpan.textContent = savedData[key] !== undefined ? savedData[key] : "";
+        valueSpan.dataset.key = key;
+
+        if (key === "v") {
+            row.classList.add("datapanel__row--readonly");
+        } else {
+            valueSpan.contentEditable = "true";
+            valueSpan.addEventListener("blur", saveEditedField);
+            valueSpan.addEventListener("keydown", commitFieldOnEnter);
+        }
+
+        row.append(keySpan, colonSpan, valueSpan);
+        dataPanelBody.append(row);
+    });
+};
+
+const openDataPanel = () => {
+    renderDataPanel();
+    dataPanelOverlay.hidden = false;
+    void dataPanel.offsetWidth;
+    dataPanelOverlay.classList.add("datapanel-overlay--open");
+    dataPanel.classList.add("datapanel--open");
+};
+
+const closeDataPanel = () => {
+    dataPanelOverlay.classList.remove("datapanel-overlay--open");
+    dataPanel.classList.remove("datapanel--open");
+    window.setTimeout(() => {
+        dataPanelOverlay.hidden = true;
+    }, 220);
+};
+
+viewDataButton.addEventListener("click", openDataPanel);
+dataPanelClose.addEventListener("click", closeDataPanel);
+
+dataPanelOverlay.addEventListener("click", (event) => {
+    if (event.target === dataPanelOverlay) {
+        closeDataPanel();
+    }
+});
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !dataPanelOverlay.hidden) {
+        closeDataPanel();
+    }
+});
+
+settings.taxLocale.addEventListener("change", taxMath);
+saveButton.addEventListener("click", onSave);
+taxMath();
+
 
 
