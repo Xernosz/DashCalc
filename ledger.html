@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Every dash you took or passed, and what they really paid.">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1D1D1D" media="(prefers-color-scheme: dark)">
+  <title>Journal &middot; DashCalc</title>
+
+  <link rel="stylesheet" href="tokens.css">
+
+  <style>
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topbar__mark {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--red);
+    }
+
+    .topbar__back {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 48px;
+      padding: 0 15px;
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: border-color 150ms ease;
+    }
+
+    .topbar__back:focus-visible {
+      border-color: var(--red);
+      outline: none;
+    }
+
+    .content {
+      flex: 1;
+      padding: 16px 16px 0;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      overflow: hidden;
+    }
+
+    .card+.card {
+      margin-top: 14px;
+    }
+
+    .sum {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .sum__cell {
+      padding: 14px 12px 15px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sum__cell:nth-child(odd) {
+      border-right: 1px solid var(--border);
+    }
+
+    .sum__cell:nth-last-child(-n+2) {
+      border-bottom: 0;
+    }
+
+    .sum__v {
+      font-family: var(--font-num);
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+
+    .sum__v[data-grade] {
+      color: var(--g);
+    }
+
+    .sum__k {
+      margin-top: 2px;
+      font-size: 0.8125rem;
+      color: var(--text-dim);
+    }
+
+    .listhead {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 22px 2px 10px;
+    }
+
+    .listhead__t {
+      font-size: 1.0625rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .listhead__n {
+      font-size: 0.875rem;
+      color: var(--text-mute);
+    }
+
+    .entry {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 12px 14px;
+    }
+
+    .entry+.entry {
+      border-top: 1px solid var(--border);
+    }
+
+    .entry__grade {
+      flex: 0 0 auto;
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: var(--g-tint);
+      color: var(--g);
+      font-size: 1.375rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+
+    .entry[data-grade="S"] .entry__grade {
+      text-shadow: 0 0 10px var(--grade-s);
+    }
+
+    .entry__main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .entry__top {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 4px 9px;
+    }
+
+    .entry__pay {
+      font-family: var(--font-num);
+      font-size: 1.1875rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .entry__miles {
+      font-family: var(--font-num);
+      font-size: 0.9375rem;
+      color: var(--text-dim);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .entry__rates {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px 14px;
+      margin-top: 3px;
+    }
+
+    .entry__rate {
+      font-family: var(--font-num);
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: var(--text-dim);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .entry__meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      font-size: 0.8125rem;
+      color: var(--text-mute);
+    }
+
+    .entry__tag {
+      padding: 1px 7px 2px;
+      border-radius: 5px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .entry__tag--took {
+      background: var(--grade-a-tint);
+      color: var(--grade-a);
+    }
+
+    .entry__tag--passed {
+      background: var(--surface-2);
+      color: var(--text-dim);
+    }
+
+    .entry__del {
+      flex: 0 0 auto;
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      font-size: 1.375rem;
+      line-height: 1;
+      color: var(--text-mute);
+      transition: background-color 150ms ease, color 150ms ease;
+    }
+
+    .entry__del:focus-visible {
+      outline: 2px solid var(--red);
+      outline-offset: -2px;
+    }
+
+    .blank {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      padding: 48px 24px;
+      text-align: center;
+    }
+
+    .blank__mark {
+      width: 46px;
+      height: 46px;
+      margin-bottom: 8px;
+      border-radius: 50%;
+      border: 2px dashed var(--border-strong);
+    }
+
+    .blank__t {
+      font-size: 1.0625rem;
+      font-weight: 700;
+      color: var(--text-dim);
+    }
+
+    .blank__s {
+      font-size: 0.9375rem;
+      color: var(--text-mute);
+      max-width: 30ch;
+    }
+
+    .blank__go {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: var(--tap);
+      margin-top: 14px;
+      padding: 0 26px;
+      border-radius: 12px;
+      background: var(--red-btn);
+      color: var(--on-red);
+      font-size: 1.0625rem;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    @media (hover: hover) {
+      .topbar__back:hover {
+        border-color: var(--red);
+      }
+
+      .entry__del:hover {
+        background: var(--grade-f-tint);
+        color: var(--grade-f);
+      }
+
+      .blank__go:hover {
+        background: var(--red-press);
+      }
+
+      .credit__link:hover {
+        color: var(--text);
+      }
+    }
+
+    @media (min-width: 620px) {
+      body {
+        font-size: 1.125rem;
+      }
+
+      .app {
+        max-width: 560px;
+      }
+
+      .content {
+        padding: 20px 20px 0;
+      }
+
+      .sum {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .sum__cell:nth-child(odd) {
+        border-right: 0;
+      }
+
+      .sum__cell:not(:nth-child(3n)) {
+        border-right: 1px solid var(--border);
+      }
+
+      .sum__cell:nth-last-child(-n+3) {
+        border-bottom: 0;
+      }
+    }
+
+    @media (min-width: 900px) {
+      body {
+        padding-bottom: 40px;
+      }
+
+      .app {
+        max-width: 760px;
+        min-height: 0;
+      }
+
+      .topbar {
+        position: static;
+        padding: 16px 24px;
+      }
+
+      .topbar__mark {
+        font-size: 1.5rem;
+      }
+
+      .content {
+        padding: 24px 24px 0;
+      }
+
+      .sum__v {
+        font-size: 1.75rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <header class="topbar">
+      <span class="topbar__mark">DashCalc</span>
+      <a class="topbar__back" href="calculator.html">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
+          <path d="M9.5 3.5 5 8l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+        Calculator
+      </a>
+    </header>
+
+    <main class="content">
+      <h1 class="vh">Your journal</h1>
+
+      <section class="card">
+        <div class="sum">
+          <div class="sum__cell">
+            <div class="sum__v" id="sum-took">0</div>
+            <div class="sum__k">you took</div>
+          </div>
+          <div class="sum__cell">
+            <div class="sum__v" id="sum-passed">0</div>
+            <div class="sum__k">you passed</div>
+          </div>
+          <div class="sum__cell">
+            <div class="sum__v" id="sum-kept">&mdash;</div>
+            <div class="sum__k">you kept</div>
+          </div>
+          <div class="sum__cell">
+            <div class="sum__v" id="sum-miles">&mdash;</div>
+            <div class="sum__k">miles driven</div>
+          </div>
+          <div class="sum__cell">
+            <div class="sum__v" id="sum-hourly">&mdash;</div>
+            <div class="sum__k">an hour</div>
+          </div>
+          <div class="sum__cell">
+            <div class="sum__v" id="sum-permile">&mdash;</div>
+            <div class="sum__k">a mile</div>
+          </div>
+        </div>
+      </section>
+
+      <div class="listhead">
+        <h2 class="listhead__t">Every dash</h2>
+        <span class="listhead__n" id="entry-count"></span>
+      </div>
+
+      <section class="card">
+        <div id="entry-blank">
+          <div class="blank">
+            <span class="blank__mark" aria-hidden="true"></span>
+            <span class="blank__t">Nothing logged yet</span>
+            <span class="blank__s">Every offer you take or pass on the calculator shows up here.</span>
+            <a class="blank__go" href="calculator.html">Go to calculator</a>
+          </div>
+        </div>
+        <div id="entry-list"></div>
+      </section>
+    </main>
+
+    <footer class="credit">
+      <span class="credit__text">Made by Xernosz</span>
+      <a class="credit__link" href="index.html">Change my setup</a>
+    </footer>
+  </div>
+
+  <script src="offers.js"></script>
+  <script src="ledger.js"></script>
+</body>
+
+</html>

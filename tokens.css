@@ -89,6 +89,10 @@ summary {
   --grade-c-tint: #F7F0DC;
   --grade-d-tint: #FAECE1;
   --grade-f-tint: #F7E6E4;
+
+  --grade-s: #927209;
+  --grade-s-tint: #F7EDCB;
+  --grade-s-shine: rgba(255, 244, 214, 0.75);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -123,6 +127,10 @@ summary {
     --grade-c-tint: #2B2412;
     --grade-d-tint: #2C1E14;
     --grade-f-tint: #2C1816;
+
+    --grade-s: #F0CE63;
+    --grade-s-tint: #2E2708;
+    --grade-s-shine: rgba(255, 240, 194, 0.5);
   }
 }
 
@@ -149,6 +157,11 @@ summary {
 [data-grade="F"] {
   --g: var(--grade-f);
   --g-tint: var(--grade-f-tint);
+}
+
+[data-grade="S"] {
+  --g: var(--grade-s);
+  --g-tint: var(--grade-s-tint);
 }
 
 [data-grade=""] {

@@ -13,7 +13,6 @@
   <link rel="stylesheet" href="tokens.css">
 
   <style>
-
     .topbar {
       position: sticky;
       top: 0;
@@ -59,13 +58,13 @@
 
     .today {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       background: var(--surface);
       border-bottom: 1px solid var(--border);
     }
 
     .today__cell {
-      padding: 9px 8px 11px;
+      padding: 9px 6px 11px;
       text-align: center;
     }
 
@@ -80,6 +79,10 @@
       letter-spacing: -0.03em;
       font-variant-numeric: tabular-nums;
       line-height: 1.1;
+    }
+
+    .today__v[data-grade] {
+      color: var(--g);
     }
 
     .today__k {
@@ -260,7 +263,7 @@
     }
 
     .dial__letter {
-      font-size: 3.25rem;
+      font-size: 3.5rem;
       font-weight: 900;
       letter-spacing: -0.06em;
       color: var(--g);
@@ -282,19 +285,46 @@
 
     .verdict__big {
       font-family: var(--font-num);
-      font-size: 2.625rem;
+      font-size: 2.875rem;
       font-weight: 800;
       letter-spacing: -0.055em;
       line-height: 1;
       font-variant-numeric: tabular-nums;
+      color: var(--g);
+      transition: color 260ms ease;
     }
 
     .verdict__sub {
-      margin-top: 6px;
+      margin-top: 4px;
       font-size: 0.9375rem;
       font-weight: 600;
       color: var(--text-dim);
       line-height: 1.3;
+    }
+
+    .verdict__mile {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+
+    .verdict__mile span {
+      font-family: var(--font-num);
+      font-size: 1.3125rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+      color: var(--g);
+      transition: color 260ms ease;
+    }
+
+    .verdict__note {
+      margin-top: 7px;
+      font-size: 0.8125rem;
+      color: var(--text-mute);
     }
 
     .call {
@@ -310,6 +340,41 @@
       letter-spacing: 0.02em;
       text-transform: uppercase;
       transition: background-color 260ms ease, color 260ms ease;
+    }
+
+    #verdict[data-grade="S"] .dial__letter {
+      color: var(--grade-s);
+      text-shadow: 0 0 18px var(--grade-s), 0 0 5px var(--grade-s);
+    }
+
+    #verdict[data-grade="S"] .call {
+      position: relative;
+      overflow: hidden;
+      border-top-color: var(--grade-s);
+      letter-spacing: 0.14em;
+    }
+
+    #verdict[data-grade="S"] .call::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 55%;
+      background: linear-gradient(100deg, transparent, var(--grade-s-shine), transparent);
+      transform: translateX(-180%);
+      animation: shine 2600ms ease-in-out infinite;
+    }
+
+    @keyframes shine {
+      0% {
+        transform: translateX(-180%);
+      }
+
+      55%,
+      100% {
+        transform: translateX(320%);
+      }
     }
 
     .facts {
@@ -493,6 +558,11 @@
     .btn--take {
       background: var(--red-btn);
       color: var(--on-red);
+    }
+
+    .credit__links {
+      display: flex;
+      gap: 18px;
     }
 
     .sheet-overlay {
@@ -1000,6 +1070,7 @@
     }
 
     @media (max-height: 540px) and (orientation: landscape) {
+
       .topbar,
       .actions {
         position: static;
@@ -1039,7 +1110,6 @@
         font-size: 1.125rem;
       }
     }
-
   </style>
 </head>
 
@@ -1057,7 +1127,7 @@
       </button>
     </header>
 
-        <div class="today">
+    <div class="today">
       <div class="today__cell">
         <div class="today__v" id="today-seen">0</div>
         <div class="today__k">offers seen</div>
@@ -1070,12 +1140,16 @@
         <div class="today__v" id="today-hourly">&mdash;</div>
         <div class="today__k">an hour</div>
       </div>
+      <div class="today__cell">
+        <div class="today__v" id="today-permile">&mdash;</div>
+        <div class="today__k">a mile</div>
+      </div>
     </div>
 
     <main class="content">
       <h1 class="vh">Offer calculator</h1>
 
-            <section class="card" id="no-setup" hidden>
+      <section class="card" id="no-setup" hidden>
         <div class="setup__body">
           <h2 class="setup__t">Set up your car first</h2>
           <p class="setup__s">We need your gas mileage and your state before we can tell you what an offer is really
@@ -1086,7 +1160,7 @@
 
       <div id="calc-body">
 
-                <section class="card offer-card">
+        <section class="card offer-card">
           <div class="card__pad">
             <div class="ask">
               <label class="ask__q" for="offer-pay">How much do they pay?</label>
@@ -1107,31 +1181,9 @@
             </div>
           </div>
 
-                    <details class="more">
-            <summary class="more__sum">Add more (optional)</summary>
-            <div class="more__body">
-              <div class="ask">
-                <label class="ask__q" for="offer-minutes">How many minutes?</label>
-                <div class="ask__control">
-                  <input class="ask__input" id="offer-minutes" name="offerMinutes" type="text" inputmode="numeric"
-                    enterkeyhint="next" autocomplete="off" placeholder="we'll guess">
-                  <span class="ask__unit">min</span>
-                </div>
-              </div>
-
-              <div class="ask">
-                <label class="ask__q" for="offer-store-miles">How far to the store?</label>
-                <div class="ask__control">
-                  <input class="ask__input" id="offer-store-miles" name="offerStoreMiles" type="text"
-                    inputmode="decimal" enterkeyhint="done" autocomplete="off" placeholder="0.0">
-                  <span class="ask__unit">miles</span>
-                </div>
-              </div>
-            </div>
-          </details>
         </section>
 
-                <section class="card" id="verdict" data-grade="" style="--fill:0%">
+        <section class="card" id="verdict" data-grade="" style="--fill:0%">
 
           <div id="verdict-empty">
             <div class="empty">
@@ -1151,11 +1203,13 @@
               </div>
               <div class="verdict__money">
                 <div class="verdict__big" id="verdict-hourly">$0.00</div>
-                <div class="verdict__sub">an hour,<br>after gas and taxes</div>
+                <div class="verdict__sub">an hour</div>
+                <div class="verdict__mile"><span id="verdict-permile">$0.00</span> a mile</div>
+                <div class="verdict__note">after gas and taxes</div>
               </div>
             </div>
 
-                        <div class="call" id="verdict-call" aria-live="polite" aria-atomic="true">&mdash;</div>
+            <div class="call" id="verdict-call" aria-live="polite" aria-atomic="true">&mdash;</div>
 
             <div class="facts">
               <div class="facts__cell">
@@ -1167,8 +1221,8 @@
                 <div class="facts__k">how long</div>
               </div>
               <div class="facts__cell">
-                <div class="facts__v" id="fact-permile">&mdash;</div>
-                <div class="facts__k">a mile</div>
+                <div class="facts__v" id="fact-costs">&mdash;</div>
+                <div class="facts__k">gas + tax</div>
               </div>
             </div>
 
@@ -1212,11 +1266,14 @@
 
     <footer class="credit">
       <span class="credit__text">Made by Xernosz</span>
-      <a class="credit__link" href="index.html">Change my setup</a>
+      <div class="credit__links">
+        <a class="credit__link" href="ledger.html">Journal</a>
+        <a class="credit__link" href="index.html">Change my setup</a>
+      </div>
     </footer>
   </div>
 
-    <div class="sheet-overlay" id="sheet-overlay" hidden>
+  <div class="sheet-overlay" id="sheet-overlay" hidden>
     <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
 
       <span class="sheet__grab" aria-hidden="true"></span>
@@ -1351,6 +1408,7 @@
     </div>
   </div>
 
+  <script src="offers.js"></script>
   <script src="calculator.js"></script>
 </body>
 
