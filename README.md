@@ -1,6 +1,6 @@
 # DashCalc
 A web based calculator to determine  whether a Doordash order is "worth" taking based on your specifications.
-Currently in development stages, preview the UI here - https://xernosz.github.io/DashCalc/
+Currently in functional test build! Go maximize your earning and report any bugs! - https://xernosz.github.io/DashCalc/
 
 # How to use
 All you do is load up the website, put in your information, and you can either put the calculations in if you are in a safe position to do so, or quickly glance down at the intuitive graph showing you the order profits you deserve. It's simple as that!
