@@ -27,13 +27,57 @@ const addOffer = (offer) => {
 };
 
 const deleteOffer = (id) => {
-    saveOffers(loadOffers().filter((offer) => offer.id !== id));
+    const offers = loadOffers();
+    const offer = offers.find((offer) => offer.id === id);
+    if (offer !== undefined) offer.deletedAt = new Date().toISOString();
+    saveOffers(offers);
+};
+
+const restoreOffer = (id) => {
+    const offers = loadOffers();
+    const offer = offers.find((offer) => offer.id === id);
+    if (offer !== undefined) delete offer.deletedAt;
+    saveOffers(offers);
+};
+
+const updateOfferField = (id, field, value) => {
+    const offers = loadOffers();
+    const offer = offers.find((offer) => offer.id === id);
+    if (offer === undefined) return;
+
+    offer[field] = value;
+
+    const keep = offer.pay - (offer.gas || 0) - (offer.wear || 0) - (offer.tax || 0);
+    const hours = offer.minutes / 60;
+
+    offer.keep = keep;
+    offer.hourly = hours > 0 ? keep / hours : 0;
+    offer.perMile = offer.miles > 0 ? keep / offer.miles : 0;
+    offer.grade = hourlyGrade(offer.hourly, offer.perMile);
+
+    saveOffers(offers);
+};
+
+const activeOffers = () => {
+    return loadOffers().filter((offer) => !offer.deletedAt);
 };
 
 const offersFromToday = () => {
     const today = new Date().toDateString();
-    return loadOffers().filter((offer) => new Date(offer.at).toDateString() === today);
+    return activeOffers().filter((offer) => new Date(offer.at).toDateString() === today);
 };
+
+const DELETED_RECORD_LIFESPAN_DAYS = 30;
+
+const purgeOldDeletes = () => {
+    const cutoff = Date.now() - DELETED_RECORD_LIFESPAN_DAYS * 24 * 60 * 60 * 1000;
+    const offers = loadOffers();
+    const kept = offers.filter((offer) => !offer.deletedAt || new Date(offer.deletedAt).getTime() > cutoff);
+
+    if (kept.length !== offers.length) saveOffers(kept);
+};
+
+purgeOldDeletes();
 
 const addUp = (offers, field) => {
     return offers.reduce((total, offer) => total + Number(offer[field] || 0), 0);

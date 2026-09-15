@@ -9,6 +9,9 @@ const entryCount = document.getElementById("entry-count");
 const nothingLoggedCard = document.getElementById("entry-blank");
 const entryList = document.getElementById("entry-list");
 
+const undoBar = document.getElementById("undo-bar");
+const undoButton = document.getElementById("undo-btn");
+
 const money = (amount) => "$" + amount.toFixed(2);
 
 const perMileOf = (offer) => {
@@ -30,13 +33,45 @@ const spanWith = (className, text) => {
     return span;
 };
 
+const parseEditedNumber = (text) => {
+    return Number(text.replace(/[^0-9.]/g, ""));
+};
+
+const commitFieldOnEnter = (event) => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        event.target.blur();
+    }
+};
+
+const saveEditedField = (event) => {
+    const id = event.target.closest(".entry").dataset.id;
+    const field = event.target.dataset.field;
+    const value = parseEditedNumber(event.target.textContent);
+
+    if (Number.isFinite(value) && value > 0) {
+        updateOfferField(id, field, value);
+    }
+
+    showLedger();
+};
+
 const buildEntry = (offer) => {
+    const payValue = spanWith("entry__pay", money(offer.pay));
+    payValue.contentEditable = "plaintext-only";
+    payValue.dataset.field = "pay";
+    payValue.addEventListener("blur", saveEditedField);
+    payValue.addEventListener("keydown", commitFieldOnEnter);
+
+    const milesValue = spanWith("entry__miles", offer.miles.toFixed(1) + " mi");
+    milesValue.contentEditable = "plaintext-only";
+    milesValue.dataset.field = "miles";
+    milesValue.addEventListener("blur", saveEditedField);
+    milesValue.addEventListener("keydown", commitFieldOnEnter);
+
     const topLine = document.createElement("div");
     topLine.className = "entry__top";
-    topLine.append(
-        spanWith("entry__pay", money(offer.pay)),
-        spanWith("entry__miles", offer.miles.toFixed(1) + " mi")
-    );
+    topLine.append(payValue, milesValue);
 
     const rateLine = document.createElement("div");
     rateLine.className = "entry__rates";
@@ -71,13 +106,14 @@ const buildEntry = (offer) => {
     const entry = document.createElement("article");
     entry.className = "entry";
     entry.dataset.grade = offer.grade;
+    entry.dataset.id = offer.id;
     entry.append(spanWith("entry__grade", offer.grade === "S" ? "★" : offer.grade), details, deleteButton);
 
     return entry;
 };
 
 const showLedger = () => {
-    const newestFirst = loadOffers().slice().reverse();
+    const newestFirst = activeOffers().slice().reverse();
     const totals = summarizeOffers(newestFirst);
 
     sumTook.textContent = totals.took;
@@ -98,12 +134,43 @@ const showLedger = () => {
     });
 };
 
+const UNDO_WINDOW_MS = 8000;
+let undoTimeoutId = null;
+let idPendingUndo = null;
+
+const hideUndoBar = () => {
+    if (undoTimeoutId !== null) {
+        window.clearTimeout(undoTimeoutId);
+        undoTimeoutId = null;
+    }
+
+    idPendingUndo = null;
+    undoBar.hidden = true;
+};
+
+const showUndoBar = (id) => {
+    if (undoTimeoutId !== null) window.clearTimeout(undoTimeoutId);
+
+    idPendingUndo = id;
+    undoBar.hidden = false;
+    undoTimeoutId = window.setTimeout(hideUndoBar, UNDO_WINDOW_MS);
+};
+
 entryList.addEventListener("click", (event) => {
     const deleteButton = event.target.closest(".entry__del");
     if (deleteButton === null) return;
 
     deleteOffer(deleteButton.dataset.id);
     showLedger();
+    showUndoBar(deleteButton.dataset.id);
+});
+
+undoButton.addEventListener("click", () => {
+    if (idPendingUndo === null) return;
+
+    restoreOffer(idPendingUndo);
+    showLedger();
+    hideUndoBar();
 });
 
 showLedger();
