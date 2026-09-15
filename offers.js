@@ -101,17 +101,17 @@ const summarizeOffers = (offers) => {
 };
 
 const HOURLY_GRADES = [
-    { grade: "A", atLeast: 22 },
-    { grade: "B", atLeast: 18 },
-    { grade: "C", atLeast: 14 },
-    { grade: "D", atLeast: 10 }
+    { grade: "A", atLeast: 20 },
+    { grade: "B", atLeast: 15 },
+    { grade: "C", atLeast: 11 },
+    { grade: "D", atLeast: 7 }
 ];
 
 const PER_MILE_GRADES = [
-    { grade: "A", atLeast: 1.50 },
-    { grade: "B", atLeast: 1.20 },
-    { grade: "C", atLeast: 0.90 },
-    { grade: "D", atLeast: 0.60 }
+    { grade: "A", atLeast: 1.25 },
+    { grade: "B", atLeast: 1.00 },
+    { grade: "C", atLeast: 0.75 },
+    { grade: "D", atLeast: 0.50 }
 ];
 
 const GOLD_HOURLY = 35;
