@@ -45,7 +45,7 @@ const calculatorBody = document.getElementById("calc-body");
 
 const payBox = document.getElementById("offer-pay");
 const milesBox = document.getElementById("offer-miles");
-
+const farTripBox = document.getElementById("far-trip");
 const nothingTypedYetCard = document.getElementById("verdict-empty");
 const answerCard = document.getElementById("verdict-body");
 const verdictCard = document.getElementById("verdict");
@@ -180,8 +180,7 @@ const readTypedOffer = () => {
     const milesAreUsable = milesBox.value.trim() !== "" && Number.isFinite(miles) && miles > 0;
 
     if (!payIsUsable || !milesAreUsable) return null;
-
-    return { pay: pay, miles: miles };
+    return { pay: pay, miles: farTripBox.checked ? miles * 2 : miles };
 };
 
 let offerOnScreen = null;
@@ -364,6 +363,7 @@ if (!carIsSetUp) {
 } else {
     payBox.addEventListener("input", updateVerdict);
     milesBox.addEventListener("input", updateVerdict);
+    farTripBox.addEventListener("change", updateVerdict);
 
     skipButton.addEventListener("click", () => logOffer(false));
     takeButton.addEventListener("click", () => logOffer(true));
