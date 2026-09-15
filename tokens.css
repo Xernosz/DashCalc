@@ -54,7 +54,7 @@ summary {
 :root {
   --red: #FF3008;
   --red-press: #C72405;
-  --red-btn: var(--red);
+  --red-btn: #E0200A;
   --red-tint: #FFEDE8;
   --on-red: #FFFFFF;
 
@@ -69,7 +69,7 @@ summary {
   --text-mute: #6E6E6E;
 
   --border: #E3E1DE;
-  --border-strong: #CFCCC8;
+  --border-strong: #808080;
 
   --good: #12824A;
 
@@ -100,7 +100,7 @@ summary {
   :root {
     --red: #FF5A3C;
     --red-press: #D9330F;
-    --red-btn: #E6390F;
+    --red-btn: #E0200A;
     --red-tint: #2A1712;
     --on-red: #FFFFFF;
 
@@ -115,7 +115,7 @@ summary {
     --text-mute: #96938F;
 
     --border: #333230;
-    --border-strong: #454341;
+    --border-strong: #7A7A7A;
 
     --good: #4ADE80;
 
