@@ -1,4 +1,3 @@
-
 *,
 *::before,
 *::after {
@@ -53,11 +52,13 @@ summary {
 }
 
 :root {
-  --red: #D91500;
-  --red-press: #B92F10;
+  --red: #FF3008;
+  --red-press: #C72405;
   --red-btn: var(--red);
-  --red-tint: #FCEEE9;
+  --red-tint: #FFEDE8;
   --on-red: #FFFFFF;
+
+  --accent: #927209;
 
   --bg: #F7F6F4;
   --surface: #FFFFFF;
@@ -97,11 +98,13 @@ summary {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --red: #F2603E;
-    --red-press: #A82D14;
-    --red-btn: #C7381A;
+    --red: #FF5A3C;
+    --red-press: #D9330F;
+    --red-btn: #E6390F;
     --red-tint: #2A1712;
     --on-red: #FFFFFF;
+
+    --accent: #F0CE63;
 
     --bg: #121212;
     --surface: #1D1D1D;
