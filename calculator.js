@@ -61,6 +61,7 @@ const factCosts = document.getElementById("fact-costs");
 
 const mathPay = document.getElementById("math-pay");
 const mathGas = document.getElementById("math-gas");
+const mathWear = document.getElementById("math-wear");
 const mathTax = document.getElementById("math-tax");
 const mathKeep = document.getElementById("math-keep");
 
@@ -135,6 +136,10 @@ const mileageDeductionFor = (miles) => {
     return miles * (irsCentsPerMileToday() / 100);
 };
 
+const wearAndTearCostFor = (miles, car) => {
+    return Math.max(0, mileageDeductionFor(miles) - gasCostFor(miles, car));
+};
+
 const taxToSetAside = (pay, miles, car) => {
     const payTheIrsCanTax = Math.max(0, pay - mileageDeductionFor(miles));
     return payTheIrsCanTax * car.taxRate;
@@ -142,8 +147,9 @@ const taxToSetAside = (pay, miles, car) => {
 
 const evaluateOffer = (pay, miles, car) => {
     const gas = gasCostFor(miles, car);
+    const wear = wearAndTearCostFor(miles, car);
     const tax = taxToSetAside(pay, miles, car);
-    const keep = pay - gas - tax;
+    const keep = pay - gas - wear - tax;
     const minutes = minutesForTrip(miles, car);
     const hourly = keep / (minutes / 60);
     const perMile = keep / miles;
@@ -153,6 +159,7 @@ const evaluateOffer = (pay, miles, car) => {
         miles: miles,
         minutes: Math.round(minutes),
         gas: gas,
+        wear: wear,
         tax: tax,
         keep: keep,
         hourly: hourly,
@@ -165,9 +172,10 @@ const evaluateOffer = (pay, miles, car) => {
 const payNeededToHit = (miles, goalHourly, car) => {
     const hours = minutesForTrip(miles, car) / 60;
     const gas = gasCostFor(miles, car);
+    const wear = wearAndTearCostFor(miles, car);
     const deduction = mileageDeductionFor(miles);
     const keepWanted = goalHourly * hours;
-    const pay = (keepWanted + gas - deduction * car.taxRate) / (1 - car.taxRate);
+    const pay = (keepWanted + gas + wear - deduction * car.taxRate) / (1 - car.taxRate);
 
     return Math.max(0, pay);
 };
@@ -214,10 +222,11 @@ const showOffer = (offer) => {
 
     factKeep.textContent = money(offer.keep);
     factTime.textContent = offer.minutes + " min";
-    factCosts.textContent = money(offer.gas + offer.tax);
+    factCosts.textContent = money(offer.gas + offer.wear + offer.tax);
 
     mathPay.textContent = money(offer.pay);
     mathGas.textContent = money(offer.gas);
+    mathWear.textContent = money(offer.wear);
     mathTax.textContent = money(offer.tax);
     mathKeep.textContent = money(offer.keep);
 };
@@ -265,6 +274,7 @@ const logOffer = (took) => {
             miles: offerOnScreen.miles,
             minutes: offerOnScreen.minutes,
             gas: offerOnScreen.gas,
+            wear: offerOnScreen.wear,
             tax: offerOnScreen.tax,
             keep: offerOnScreen.keep,
             hourly: offerOnScreen.hourly,
