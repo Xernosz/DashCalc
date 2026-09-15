@@ -84,6 +84,7 @@ const taxMath = () => {
 };
 
 const SETTINGS_STORAGE_KEY = "dashcalc-settings";
+const SEEN_WELCOME_KEY = "dashcalc-seen-welcome";
 
 const loadSettings = () => {
     const savedJson = localStorage.getItem(SETTINGS_STORAGE_KEY);
@@ -113,6 +114,8 @@ const onSave = () => {
 const saveButton = document.getElementById("save-setup");
 const saveStatus = document.getElementById("save-status");
 const viewDataButton = document.getElementById("view-saved-data");
+const welcomeOkButton = document.getElementById("welcome-ok");
+const welcomeOverlay = document.getElementById("welcome-overlay");
 
 const showSavedConfirmation = () => {
     saveStatus.classList.remove("savebar__status--show");
@@ -222,8 +225,14 @@ document.addEventListener("keydown", (event) => {
     }
 });
 
+const dismissWelcome = () => {
+    localStorage.setItem(SEEN_WELCOME_KEY, "1");
+    welcomeOverlay.hidden = true;
+};
+
 inputs.homeState.addEventListener("change", taxMath);
 saveButton.addEventListener("click", onSave);
+welcomeOkButton.addEventListener("click", dismissWelcome);
 
 const applySavedSettings = () => {
     const saved = loadSettings();
@@ -233,7 +242,7 @@ const applySavedSettings = () => {
     if (saved.homeState !== undefined) inputs.homeState.value = saved.homeState;
     if (saved.typicalWait !== undefined) inputs.typicalWait.value = saved.typicalWait;
     if (saved.avgSpeed !== undefined) inputs.avgSpeed.value = saved.avgSpeed;
-
+    if (localStorage.getItem(SEEN_WELCOME_KEY) === null) welcomeOverlay.hidden = false;
     if (localStorage.getItem(SETTINGS_STORAGE_KEY) !== null) {
         viewDataButton.hidden = false;
     }

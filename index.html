@@ -13,7 +13,6 @@
   <link rel="stylesheet" href="tokens.css">
 
   <style>
-
     .topbar {
       position: sticky;
       top: 0;
@@ -393,6 +392,64 @@
       color: var(--text-mute);
     }
 
+    .welcome-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(0, 0, 0, 0.45);
+    }
+
+    .welcome-overlay[hidden] {
+      display: none;
+    }
+
+    .welcome {
+      width: min(360px, 100%);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .welcome__title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .welcome__body {
+      margin-top: 10px;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      color: var(--text-dim);
+    }
+
+    .welcome__ok {
+      width: 100%;
+      min-height: var(--tap);
+      margin-top: 20px;
+      border-radius: 12px;
+      background: var(--red);
+      color: var(--on-red);
+      font-weight: 700;
+      font-size: 1.0625rem;
+      transition: background-color 120ms ease, transform 80ms ease;
+    }
+
+    .welcome__ok:active {
+      transform: translateY(1px);
+    }
+
+    .welcome__ok:focus-visible {
+      outline: 2px solid var(--text);
+      outline-offset: 3px;
+    }
+
     .datapanel-overlay {
       position: fixed;
       inset: 0;
@@ -549,9 +606,9 @@
           the calculator a good estimate for you personally.</p>
       </div>
 
-            <form id="setup-form">
+      <form id="setup-form">
 
-                <section class="card">
+        <section class="card">
           <h2 class="card__title">Vehicle</h2>
 
           <div class="field">
@@ -585,7 +642,7 @@
           </div>
         </section>
 
-                <section class="card">
+        <section class="card">
           <h2 class="card__title">Taxes</h2>
           <p class="card__note">Self-employment tax is <strong>15.3%</strong> for everyone in this field. Add
             your state so we can calculate what you set aside.</p>
@@ -662,7 +719,7 @@
           </div>
         </section>
 
-                <section class="card">
+        <section class="card">
           <h2 class="card__title">Your specifics</h2>
           <p class="card__note">Averages across <strong>all</strong> your dashing &mdash; just a general estimate as it
             isn't as
@@ -719,6 +776,15 @@
             <p class="datapanel__hint">tap a value to edit &mdash; changes save to your browser<br><strong>V is your
                 version
                 number, and is unchangable.</strong></p>
+          </div>
+        </div>
+
+        <div class="welcome-overlay" id="welcome-overlay" hidden>
+          <div class="welcome" role="dialog" aria-modal="true" aria-label="Works with other apps too">
+            <h2 class="welcome__title">Works for other apps too</h2>
+            <p class="welcome__body">This works for any delivery app, not just DoorDash. All it needs is the pay and
+              the miles for the trip.</p>
+            <button class="welcome__ok" id="welcome-ok" type="button">Got it</button>
           </div>
         </div>
 
