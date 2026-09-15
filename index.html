@@ -361,7 +361,7 @@
     .savebar__viewdata {
       display: block;
       margin: 4px auto 0;
-      padding: 2px 4px;
+      padding: 15px 8px;
       font-size: 0.75rem;
       color: var(--text-mute);
       text-decoration: underline;
@@ -396,15 +396,21 @@
       position: fixed;
       inset: 0;
       z-index: 50;
-      display: flex;
       align-items: center;
       justify-content: center;
+      width: 100%;
+      height: 100%;
+      margin: 0;
       padding: 24px;
+      border: 0;
+      max-width: none;
+      max-height: none;
       background: rgba(0, 0, 0, 0.45);
+      color: inherit;
     }
 
-    .welcome-overlay[hidden] {
-      display: none;
+    .welcome-overlay[open] {
+      display: flex;
     }
 
     .welcome {
@@ -454,6 +460,14 @@
       position: fixed;
       inset: 0;
       z-index: 40;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      max-width: none;
+      max-height: none;
+      color: inherit;
       background: rgba(0, 0, 0, 0.28);
       backdrop-filter: blur(2px);
       -webkit-backdrop-filter: blur(2px);
@@ -595,13 +609,13 @@
 
     <header class="topbar">
       <span class="topbar__mark">DashCalc</span>
-      <span class="topbar__step">Step 1 of 2</span>
+      <span class="topbar__step">Setup</span>
     </header>
 
     <main class="content">
 
       <div class="intro">
-        <h1 class="intro__title">Configuration.</h1>
+        <h1 class="intro__title">Set up your car.</h1>
         <p class="intro__lead">This gig isn't free money, you spend money on gas and wear and tear so this should give
           the calculator a good estimate for you personally.</p>
       </div>
@@ -766,8 +780,8 @@
           <p class="savebar__fineprint">No account, no tracking. Every number stays on this phone. </p>
         </div>
 
-        <div class="datapanel-overlay" id="datapanel-overlay" hidden>
-          <div class="datapanel" id="datapanel" role="dialog" aria-modal="true" aria-label="Your saved data">
+        <dialog class="datapanel-overlay" id="datapanel-overlay" aria-label="Your saved data">
+          <div class="datapanel" id="datapanel">
             <div class="datapanel__head">
               <span class="datapanel__title">localStorage <strong>&middot;</strong> dashcalc-settings</span>
               <button class="datapanel__close" id="datapanel-close" type="button" aria-label="Close">&times;</button>
@@ -777,16 +791,16 @@
                 version
                 number, and is unchangable.</strong></p>
           </div>
-        </div>
+        </dialog>
 
-        <div class="welcome-overlay" id="welcome-overlay" hidden>
-          <div class="welcome" role="dialog" aria-modal="true" aria-label="Works with other apps too">
+        <dialog class="welcome-overlay" id="welcome-overlay" aria-label="Works with other apps too">
+          <div class="welcome">
             <h2 class="welcome__title">Works for other apps too</h2>
             <p class="welcome__body">This works for any delivery app, not just DoorDash. All it needs is the pay and
               the miles for the trip.</p>
             <button class="welcome__ok" id="welcome-ok" type="button">Got it</button>
           </div>
-        </div>
+        </dialog>
 
       </form>
 

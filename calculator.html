@@ -33,16 +33,26 @@
       color: var(--red);
     }
 
+    .topbar__actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
     .topbar__sheet {
       display: flex;
       align-items: center;
       gap: 7px;
       min-height: 48px;
-      padding: 0 15px;
+      padding: 0 12px;
       border: 1px solid var(--border-strong);
       border-radius: 999px;
       font-size: 0.9375rem;
       font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+      white-space: nowrap;
       transition: border-color 150ms ease, background-color 150ms ease;
     }
 
@@ -633,9 +643,16 @@
       position: fixed;
       inset: 0;
       z-index: 40;
-      display: flex;
       align-items: flex-end;
       justify-content: center;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      max-width: none;
+      max-height: none;
+      color: inherit;
       background: rgba(0, 0, 0, 0.42);
       backdrop-filter: blur(2px);
       -webkit-backdrop-filter: blur(2px);
@@ -643,12 +660,12 @@
       transition: opacity 240ms ease;
     }
 
-    .sheet-overlay--open {
-      opacity: 1;
+    .sheet-overlay[open] {
+      display: flex;
     }
 
-    .sheet-overlay[hidden] {
-      display: none;
+    .sheet-overlay--open {
+      opacity: 1;
     }
 
     .sheet {
@@ -1140,6 +1157,37 @@
         position: static;
       }
 
+      #calc-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 16px;
+        align-items: start;
+      }
+
+      #calc-body[hidden] {
+        display: none;
+      }
+
+      .offer-card {
+        grid-column: 1;
+        grid-row: 1;
+      }
+
+      #verdict {
+        grid-column: 2;
+        grid-row: 1;
+        margin-top: 0;
+      }
+
+      .actions {
+        grid-column: 2;
+        grid-row: 2;
+        margin: 0;
+        padding: 0;
+        background: none;
+        border-top: 0;
+      }
+
       .dial {
         width: 84px;
         height: 84px;
@@ -1182,13 +1230,21 @@
 
     <header class="topbar">
       <span class="topbar__mark">DashCalc</span>
-      <button class="topbar__sheet" id="sheet-open" type="button">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
-          <rect x="2" y="2.5" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.6" />
-          <path d="M5 6h6M5 9h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-        </svg>
-        Cheat sheet
-      </button>
+      <div class="topbar__actions">
+        <a class="topbar__sheet" href="ledger.html">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
+            <path d="M3 4h10M3 8h10M3 12h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          </svg>
+          Journal
+        </a>
+        <button class="topbar__sheet" id="sheet-open" type="button">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
+            <rect x="2" y="2.5" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.6" />
+            <path d="M5 6h6M5 9h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          </svg>
+          Cheat sheet
+        </button>
+      </div>
     </header>
 
     <div class="today">
@@ -1347,14 +1403,13 @@
     <footer class="credit">
       <span class="credit__text">Made by Xernosz</span>
       <div class="credit__links">
-        <a class="credit__link" href="ledger.html">Journal</a>
         <a class="credit__link" href="index.html">Change my setup</a>
       </div>
     </footer>
   </div>
 
-  <div class="sheet-overlay" id="sheet-overlay" hidden>
-    <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+  <dialog class="sheet-overlay" id="sheet-overlay" aria-labelledby="sheet-title">
+    <div class="sheet" id="sheet">
 
       <span class="sheet__grab" aria-hidden="true"></span>
 
@@ -1486,7 +1541,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </dialog>
 
   <script src="offers.js"></script>
   <script src="calculator.js"></script>

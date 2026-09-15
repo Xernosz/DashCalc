@@ -240,7 +240,7 @@ const updateVerdict = () => {
         showOffer(evaluateOffer(typed.pay, typed.miles, carFrom(loadSettings())));
     }
 
-    if (!cheatSheetOverlay.hidden) {
+    if (cheatSheetOverlay.open) {
         fillCheatSheet();
     }
 };
@@ -334,7 +334,7 @@ const openCheatSheet = () => {
     }
 
     fillCheatSheet();
-    cheatSheetOverlay.hidden = false;
+    cheatSheetOverlay.showModal();
     void cheatSheetPanel.offsetWidth;
     cheatSheetOverlay.classList.add("sheet-overlay--open");
     cheatSheetPanel.classList.add("sheet--open");
@@ -345,7 +345,7 @@ const closeCheatSheet = () => {
     cheatSheetPanel.classList.remove("sheet--open");
 
     cheatSheetCloseTimer = window.setTimeout(() => {
-        cheatSheetOverlay.hidden = true;
+        cheatSheetOverlay.close();
         cheatSheetCloseTimer = null;
     }, 320);
 };
@@ -386,8 +386,9 @@ if (!carIsSetUp) {
         if (event.target === cheatSheetOverlay) closeCheatSheet();
     });
 
-    document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && !cheatSheetOverlay.hidden) closeCheatSheet();
+    cheatSheetOverlay.addEventListener("cancel", (event) => {
+        event.preventDefault();
+        closeCheatSheet();
     });
 
     goodButton.addEventListener("click", () => setCheatSheetGoal(GOOD_HOURLY, goodButton, greatButton));

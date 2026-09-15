@@ -195,7 +195,7 @@ const openDataPanel = () => {
     }
 
     renderDataPanel();
-    dataPanelOverlay.hidden = false;
+    dataPanelOverlay.showModal();
     void dataPanel.offsetWidth;
     dataPanelOverlay.classList.add("datapanel-overlay--open");
     dataPanel.classList.add("datapanel--open");
@@ -205,7 +205,7 @@ const closeDataPanel = () => {
     dataPanelOverlay.classList.remove("datapanel-overlay--open");
     dataPanel.classList.remove("datapanel--open");
     closePanelTimeoutId = window.setTimeout(() => {
-        dataPanelOverlay.hidden = true;
+        dataPanelOverlay.close();
         closePanelTimeoutId = null;
     }, 220);
 };
@@ -219,15 +219,14 @@ dataPanelOverlay.addEventListener("click", (event) => {
     }
 });
 
-document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !dataPanelOverlay.hidden) {
-        closeDataPanel();
-    }
+dataPanelOverlay.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeDataPanel();
 });
 
 const dismissWelcome = () => {
     localStorage.setItem(SEEN_WELCOME_KEY, "1");
-    welcomeOverlay.hidden = true;
+    welcomeOverlay.close();
 };
 
 inputs.homeState.addEventListener("change", taxMath);
@@ -242,7 +241,7 @@ const applySavedSettings = () => {
     if (saved.homeState !== undefined) inputs.homeState.value = saved.homeState;
     if (saved.typicalWait !== undefined) inputs.typicalWait.value = saved.typicalWait;
     if (saved.avgSpeed !== undefined) inputs.avgSpeed.value = saved.avgSpeed;
-    if (localStorage.getItem(SEEN_WELCOME_KEY) === null) welcomeOverlay.hidden = false;
+    if (localStorage.getItem(SEEN_WELCOME_KEY) === null) welcomeOverlay.showModal();
     if (localStorage.getItem(SETTINGS_STORAGE_KEY) !== null) {
         viewDataButton.hidden = false;
     }
