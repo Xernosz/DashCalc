@@ -259,6 +259,7 @@ const refreshTodayBar = () => {
 const clearForm = () => {
     payBox.value = "";
     milesBox.value = "";
+    farTripBox.checked = false;
     updateVerdict();
     payBox.focus();
 };
