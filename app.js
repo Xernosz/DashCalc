@@ -97,39 +97,9 @@ const loadSettings = () => {
     }
 };
 
-const onSave = () => {
-    const settingsToSave = {
-        v: 1,
-        mpg: inputs.mpg.value,
-        gasPrice: inputs.gasPrice.value,
-        homeState: inputs.homeState.value,
-        typicalWait: inputs.typicalWait.value,
-        avgSpeed: inputs.avgSpeed.value
-    };
-    const form = document.getElementById("setup-form");
-    if (!form.reportValidity()) {
-        return;
-    }
-    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settingsToSave));
-    showSavedConfirmation();
-};
-
-const saveButton = document.getElementById("save-setup");
-const saveStatus = document.getElementById("save-status");
 const viewDataButton = document.getElementById("view-saved-data");
 const welcomeOkButton = document.getElementById("welcome-ok");
 const welcomeOverlay = document.getElementById("welcome-overlay");
-
-const showSavedConfirmation = () => {
-    saveStatus.classList.remove("savebar__status--show");
-    void saveStatus.offsetWidth;
-    saveStatus.classList.add("savebar__status--show");
-
-    viewDataButton.hidden = false;
-    viewDataButton.classList.remove("savebar__viewdata--show");
-    void viewDataButton.offsetWidth;
-    viewDataButton.classList.add("savebar__viewdata--show");
-};
 
 const autoSave = () => {
     const settingsToSave = {
@@ -257,7 +227,6 @@ const dismissWelcome = () => {
 };
 
 inputs.homeState.addEventListener("change", taxMath);
-saveButton.addEventListener("click", onSave);
 welcomeOkButton.addEventListener("click", dismissWelcome);
 
 const applySavedSettings = () => {
