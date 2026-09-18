@@ -141,10 +141,12 @@ const autoSave = () => {
         avgSpeed: inputs.avgSpeed.value
     };
     const form = document.getElementById("setup-form");
-    if (!form.checkValidity()) {
-        return
-    };
+    if (!form.checkValidity())
+        return;
+
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settingsToSave));
+    viewDataButton.hidden = false;
+    viewDataButton.classList.add("savebar__viewdata--show");
 };
 
 const onUserChangedSaved = () => {
@@ -269,6 +271,7 @@ const applySavedSettings = () => {
     if (localStorage.getItem(SEEN_WELCOME_KEY) === null) welcomeOverlay.showModal();
     if (localStorage.getItem(SETTINGS_STORAGE_KEY) !== null) {
         viewDataButton.hidden = false;
+        viewDataButton.classList.add("savebar__viewdata--show");
     }
 };
 
