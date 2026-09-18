@@ -236,36 +236,6 @@
       font-size: 1.0625rem;
     }
 
-    .linkbtn {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-top: 16px;
-      min-height: var(--tap);
-      padding: 0 18px;
-      background: var(--surface);
-      border: 1px solid var(--border-strong);
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 0.9375rem;
-      text-decoration: none;
-      transition: border-color 150ms ease;
-    }
-
-    .linkbtn:focus-visible {
-      border-color: var(--red);
-      outline: none;
-    }
-
-    .linkbtn__arrow {
-      width: 8px;
-      height: 8px;
-      border-right: 2px solid var(--red);
-      border-top: 2px solid var(--red);
-      transform: rotate(45deg);
-    }
-
     .savebar {
       position: sticky;
       bottom: 0;
@@ -276,9 +246,16 @@
     }
 
     .savebar__button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
       width: 100%;
       min-height: var(--tap);
+      padding: 8px 18px;
       border-radius: 12px;
+      text-align: center;
+      text-decoration: none;
       background: var(--red-btn);
       color: var(--on-red);
       font-weight: 700;
@@ -296,66 +273,24 @@
       outline-offset: 3px;
     }
 
-    .savebar__status {
-      margin-top: 8px;
-      min-height: 1.25rem;
+    .savebar__arrow {
+      flex-shrink: 0;
+      width: 9px;
+      height: 9px;
+      border-right: 2.5px solid currentColor;
+      border-top: 2.5px solid currentColor;
+      transform: rotate(45deg);
+    }
+
+    .savebar__note {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      text-align: center;
-      font-size: 0.875rem;
+      margin-top: 10px;
+      font-size: 0.8125rem;
       font-weight: 600;
-      color: var(--good);
-      visibility: hidden;
-      opacity: 0;
-      transform: translateY(4px) scale(0.98);
-    }
-
-    .savebar__status--show {
-      visibility: visible;
-      animation: savebar-pop 380ms cubic-bezier(0.2, 0.9, 0.3, 1.3) forwards;
-    }
-
-    .savebar__check-ring {
-      stroke-dasharray: 63;
-      stroke-dashoffset: 63;
-    }
-
-    .savebar__check-mark {
-      stroke-dasharray: 20;
-      stroke-dashoffset: 20;
-    }
-
-    .savebar__status--show .savebar__check-ring {
-      animation: savebar-draw 420ms ease forwards 60ms;
-    }
-
-    .savebar__status--show .savebar__check-mark {
-      animation: savebar-draw 260ms ease forwards 340ms;
-    }
-
-    @keyframes savebar-pop {
-      0% {
-        opacity: 0;
-        transform: translateY(6px) scale(0.94);
-      }
-
-      60% {
-        opacity: 1;
-        transform: translateY(-1px) scale(1.03);
-      }
-
-      100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-
-    @keyframes savebar-draw {
-      to {
-        stroke-dashoffset: 0;
-      }
+      color: var(--text-mute);
     }
 
     .savebar__viewdata {
@@ -375,7 +310,7 @@
     }
 
     .savebar__viewdata--show {
-      animation: savebar-fineprint-in 320ms ease forwards 420ms;
+      animation: savebar-fineprint-in 320ms ease forwards;
     }
 
     @keyframes savebar-fineprint-in {
@@ -584,10 +519,6 @@
     }
 
     @media (hover: hover) {
-      .linkbtn:hover {
-        border-color: var(--red);
-      }
-
       .savebar__button:hover {
         background: var(--red-press);
       }
@@ -760,21 +691,17 @@
           </div>
         </section>
 
-        <a class="linkbtn" href="calculator.html">
-          <span>Go to the calculator</span>
-          <span class="linkbtn__arrow" aria-hidden="true"></span>
-        </a>
-
         <div class="savebar">
-          <button class="savebar__button" id="save-setup" type="button">Save setup</button>
-          <p class="savebar__status" id="save-status" role="status" aria-live="polite">
-            <svg class="savebar__check" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
-              <circle class="savebar__check-ring" cx="12" cy="12" r="10" fill="none" stroke="currentColor"
-                stroke-width="2" />
-              <path class="savebar__check-mark" d="M7 12.5l3 3 7-7" fill="none" stroke="currentColor"
-                stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" />
+          <a class="savebar__button" href="calculator.html">
+            <span>Go to the calculator</span>
+            <span class="savebar__arrow" aria-hidden="true"></span>
+          </a>
+          <p class="savebar__note">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+              <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round" />
             </svg>
-            <span class="savebar__status-text">Saved</span>
+            <span>Saves automatically</span>
           </p>
           <button class="savebar__viewdata" id="view-saved-data" type="button" hidden>View your saved data</button>
           <p class="savebar__fineprint">No account, no tracking. Every number stays on this phone. </p>
