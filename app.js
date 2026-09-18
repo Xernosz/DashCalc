@@ -131,6 +131,14 @@ const showSavedConfirmation = () => {
     viewDataButton.classList.add("savebar__viewdata--show");
 };
 
+const removeConfirm = () => saveStatus.classList.remove("savebar__status--show");
+
+const onUserChangedSaved = () => {
+    for (const value of Object.values(inputs)) {
+        value.addEventListener("input", removeConfirm);
+    }
+};
+
 const DATA_PANEL_FIELDS = ["v", "mpg", "gasPrice", "homeState", "typicalWait", "avgSpeed"];
 
 const dataPanelOverlay = document.getElementById("datapanel-overlay");
@@ -250,6 +258,7 @@ const applySavedSettings = () => {
     }
 };
 
+onUserChangedSaved();
 applySavedSettings();
 gasMath();
 taxMath();
