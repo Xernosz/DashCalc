@@ -106,7 +106,10 @@ const onSave = () => {
         typicalWait: inputs.typicalWait.value,
         avgSpeed: inputs.avgSpeed.value
     };
-
+    const form = document.getElementById("setup-form");
+    if (!form.reportValidity()) {
+        return;
+    }
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settingsToSave));
     showSavedConfirmation();
 };
