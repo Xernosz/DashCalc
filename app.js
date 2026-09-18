@@ -131,11 +131,25 @@ const showSavedConfirmation = () => {
     viewDataButton.classList.add("savebar__viewdata--show");
 };
 
-const removeConfirm = () => saveStatus.classList.remove("savebar__status--show");
+const autoSave = () => {
+    const settingsToSave = {
+        v: 1,
+        mpg: inputs.mpg.value,
+        gasPrice: inputs.gasPrice.value,
+        homeState: inputs.homeState.value,
+        typicalWait: inputs.typicalWait.value,
+        avgSpeed: inputs.avgSpeed.value
+    };
+    const form = document.getElementById("setup-form");
+    if (!form.checkValidity()) {
+        return
+    };
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settingsToSave));
+};
 
 const onUserChangedSaved = () => {
     for (const value of Object.values(inputs)) {
-        value.addEventListener("input", removeConfirm);
+        value.addEventListener("input", autoSave);
     }
 };
 
