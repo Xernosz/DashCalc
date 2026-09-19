@@ -1,7 +1,8 @@
 const OFFERS_STORAGE_KEY = "dashcalc-offers";
+const NEW_DAY_STARTS_AT_HOUR = 4;
 
 const loadOffers = () => {
-    const savedJson = localStorage.getItem(OFFERS_STORAGE_KEY);
+    const savedJson = readStorage(OFFERS_STORAGE_KEY);
     if (savedJson === null) return [];
 
     try {
@@ -13,7 +14,7 @@ const loadOffers = () => {
 };
 
 const saveOffers = (offers) => {
-    localStorage.setItem(OFFERS_STORAGE_KEY, JSON.stringify(offers));
+    return writeStorage(OFFERS_STORAGE_KEY, JSON.stringify(offers));
 };
 
 const newOfferId = () => {
@@ -23,7 +24,7 @@ const newOfferId = () => {
 const addOffer = (offer) => {
     const offers = loadOffers();
     offers.push(offer);
-    saveOffers(offers);
+    return saveOffers(offers);
 };
 
 const deleteOffer = (id) => {
@@ -41,19 +42,25 @@ const restoreOffer = (id) => {
 };
 
 const updateOfferField = (id, field, value) => {
+    const settings = loadSettings();
+    if (!carIsSetUp(settings)) return;
+
     const offers = loadOffers();
     const offer = offers.find((offer) => offer.id === id);
     if (offer === undefined) return;
 
     offer[field] = value;
 
-    const keep = offer.pay - (offer.gas || 0) - (offer.wear || 0) - (offer.tax || 0);
-    const hours = offer.minutes / 60;
+    const redone = evaluateOffer(offer.pay, offer.miles, offer.farTrip, carFrom(settings, new Date(offer.at)));
 
-    offer.keep = keep;
-    offer.hourly = hours > 0 ? keep / hours : 0;
-    offer.perMile = offer.miles > 0 ? keep / offer.miles : 0;
-    offer.grade = hourlyGrade(offer.hourly, offer.perMile);
+    offer.minutes = redone.minutes;
+    offer.gas = redone.gas;
+    offer.wear = redone.wear;
+    offer.tax = redone.tax;
+    offer.keep = redone.keep;
+    offer.hourly = redone.hourly;
+    offer.perMile = redone.perMile;
+    offer.grade = redone.grade;
 
     saveOffers(offers);
 };
@@ -62,9 +69,15 @@ const activeOffers = () => {
     return loadOffers().filter((offer) => !offer.deletedAt);
 };
 
+const workDayOf = (moment) => {
+    const shifted = new Date(moment);
+    shifted.setHours(shifted.getHours() - NEW_DAY_STARTS_AT_HOUR);
+    return shifted.toDateString();
+};
+
 const offersFromToday = () => {
-    const today = new Date().toDateString();
-    return activeOffers().filter((offer) => new Date(offer.at).toDateString() === today);
+    const today = workDayOf(new Date());
+    return activeOffers().filter((offer) => workDayOf(new Date(offer.at)) === today);
 };
 
 const DELETED_RECORD_LIFESPAN_DAYS = 30;
@@ -83,11 +96,15 @@ const addUp = (offers, field) => {
     return offers.reduce((total, offer) => total + Number(offer[field] || 0), 0);
 };
 
+const addUpMilesDriven = (offers) => {
+    return offers.reduce((total, offer) => total + Number(milesDriven(offer.miles, offer.farTrip) || 0), 0);
+};
+
 const summarizeOffers = (offers) => {
     const taken = offers.filter((offer) => offer.took);
     const keptTotal = addUp(taken, "keep");
     const hoursTotal = addUp(taken, "minutes") / 60;
-    const milesTotal = addUp(taken, "miles");
+    const milesTotal = addUpMilesDriven(taken);
 
     return {
         seen: offers.length,
@@ -98,43 +115,4 @@ const summarizeOffers = (offers) => {
         hourly: hoursTotal > 0 ? keptTotal / hoursTotal : null,
         perMile: milesTotal > 0 ? keptTotal / milesTotal : null
     };
-};
-
-const HOURLY_GRADES = [
-    { grade: "A", atLeast: 20 },
-    { grade: "B", atLeast: 15 },
-    { grade: "C", atLeast: 11 },
-    { grade: "D", atLeast: 7 }
-];
-
-const PER_MILE_GRADES = [
-    { grade: "A", atLeast: 1.25 },
-    { grade: "B", atLeast: 1.00 },
-    { grade: "C", atLeast: 0.75 },
-    { grade: "D", atLeast: 0.50 }
-];
-
-const GOLD_HOURLY = 35;
-const GOLD_PER_MILE = 2.50;
-
-const gradeOnScale = (value, scale) => {
-    for (const step of scale) {
-        if (value >= step.atLeast) return step.grade;
-    }
-    return "F";
-};
-
-const isGold = (hourly, perMile) => {
-    return hourly !== null && perMile !== null &&
-        hourly >= GOLD_HOURLY && perMile >= GOLD_PER_MILE;
-};
-
-const hourlyGrade = (hourly, perMile) => {
-    if (isGold(hourly, perMile)) return "S";
-    return hourly === null ? "" : gradeOnScale(hourly, HOURLY_GRADES);
-};
-
-const perMileGrade = (hourly, perMile) => {
-    if (isGold(hourly, perMile)) return "S";
-    return perMile === null ? "" : gradeOnScale(perMile, PER_MILE_GRADES);
 };

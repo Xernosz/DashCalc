@@ -3,6 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
   <meta name="description" content="Every dash you took or passed, and what they really paid.">
@@ -10,7 +11,7 @@
   <meta name="theme-color" content="#1D1D1D" media="(prefers-color-scheme: dark)">
   <title>Journal &middot; DashCalc</title>
 
-  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="tokens.css?v=2">
 
   <style>
     .topbar {
@@ -220,14 +221,20 @@
 
     .entry__meta {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 8px;
+      gap: 4px 8px;
       margin-top: 4px;
       font-size: 0.8125rem;
       color: var(--text-mute);
     }
 
+    .entry__meta time {
+      white-space: nowrap;
+    }
+
     .entry__tag {
+      white-space: nowrap;
       padding: 1px 7px 2px;
       border-radius: 5px;
       font-size: 0.75rem;
@@ -239,7 +246,8 @@
       color: var(--grade-a);
     }
 
-    .entry__tag--passed {
+    .entry__tag--passed,
+    .entry__tag--far {
       background: var(--surface-2);
       color: var(--text-dim);
     }
@@ -502,8 +510,9 @@
     </footer>
   </div>
 
-  <script src="offers.js"></script>
-  <script src="ledger.js"></script>
+  <script src="shared.js?v=2"></script>
+  <script src="offers.js?v=2"></script>
+  <script src="ledger.js?v=2"></script>
 </body>
 
 </html>

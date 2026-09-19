@@ -1,33 +1,6 @@
-if (navigator.storage?.persist) {
-    navigator.storage.persist().catch(() => { });
-}
-
-const SETTINGS_STORAGE_KEY = "dashcalc-settings";
-const SELF_EMPLOYMENT_TAX_RATE = 0.153;
-const FALLBACK_SPEED_MPH = 30;
-const SHORTEST_POSSIBLE_TRIP_MINUTES = 1;
 const HOURLY_THAT_FILLS_THE_DIAL = 25;
 const GOOD_HOURLY = 20;
 const GREAT_HOURLY = 25;
-
-const STATE_TAX_RATES = {
-    AL: 0.0500, AK: 0.0000, AZ: 0.0250, AR: 0.0440, CA: 0.0930,
-    CO: 0.0440, CT: 0.0499, DE: 0.0660, DC: 0.0850, FL: 0.0000,
-    GA: 0.0539, HI: 0.0790, ID: 0.0580, IL: 0.0495, IN: 0.0305,
-    IA: 0.0380, KS: 0.0570, KY: 0.0400, LA: 0.0425, ME: 0.0715,
-    MD: 0.0575, MA: 0.0500, MI: 0.0425, MN: 0.0785, MS: 0.0470,
-    MO: 0.0480, MT: 0.0590, NE: 0.0520, NV: 0.0000, NH: 0.0000,
-    NJ: 0.0637, NM: 0.0590, NY: 0.0685, NC: 0.0450, ND: 0.0250,
-    OH: 0.0350, OK: 0.0475, OR: 0.0990, PA: 0.0307, RI: 0.0599,
-    SC: 0.0620, SD: 0.0000, TN: 0.0000, TX: 0.0000, UT: 0.0465,
-    VT: 0.0660, VA: 0.0575, WA: 0.0000, WV: 0.0482, WI: 0.0765,
-    WY: 0.0000
-};
-
-const IRS_MILEAGE_RATES = [
-    { startsOn: new Date(2026, 0, 1), centsPerMile: 72.5 },
-    { startsOn: new Date(2026, 6, 1), centsPerMile: 76 }
-];
 
 const CALL_FOR_GRADE = {
     S: "GRAB IT",
@@ -83,97 +56,13 @@ const cheatSheetRows = document.querySelectorAll("#sheet-list .r");
 const cheatSheetHeadline = document.getElementById("sheet-quick");
 const cheatSheetChips = document.querySelectorAll("#sheet-chips span");
 
-const money = (amount) => "$" + amount.toFixed(2);
-
-const isFilledNumber = (value) => {
-    return value !== undefined && String(value).trim() !== "" && Number.isFinite(Number(value));
-};
-
-const loadSettings = () => {
-    const savedJson = localStorage.getItem(SETTINGS_STORAGE_KEY);
-    if (savedJson === null) return { v: 1 };
-
-    try {
-        return JSON.parse(savedJson);
-    } catch {
-        return { v: 1 };
-    }
-};
-
-const irsCentsPerMileToday = () => {
-    const today = new Date();
-    let rateInEffect = IRS_MILEAGE_RATES[0];
-
-    for (const rate of IRS_MILEAGE_RATES) {
-        if (today >= rate.startsOn) {
-            rateInEffect = rate;
-        }
-    }
-
-    return rateInEffect.centsPerMile;
-};
-
-const carFrom = (settings) => {
-    return {
-        milesPerGallon: Number(settings.mpg),
-        gasPricePerGallon: Number(settings.gasPrice),
-        speedMph: Number(settings.avgSpeed) || FALLBACK_SPEED_MPH,
-        waitMinutes: Number(settings.typicalWait) || 0,
-        taxRate: SELF_EMPLOYMENT_TAX_RATE + (STATE_TAX_RATES[settings.homeState] ?? 0)
-    };
-};
-
-const minutesForTrip = (miles, car) => {
-    const drivingMinutes = (miles / car.speedMph) * 60;
-    return Math.max(drivingMinutes + car.waitMinutes, SHORTEST_POSSIBLE_TRIP_MINUTES);
-};
-
-const gasCostFor = (miles, car) => {
-    return miles * (car.gasPricePerGallon / car.milesPerGallon);
-};
-
-const mileageDeductionFor = (miles) => {
-    return miles * (irsCentsPerMileToday() / 100);
-};
-
-const wearAndTearCostFor = (miles, car) => {
-    return Math.max(0, mileageDeductionFor(miles) - gasCostFor(miles, car));
-};
-
-const taxToSetAside = (pay, miles, car) => {
-    const payTheIrsCanTax = Math.max(0, pay - mileageDeductionFor(miles));
-    return payTheIrsCanTax * car.taxRate;
-};
-
-const evaluateOffer = (pay, miles, car) => {
-    const gas = gasCostFor(miles, car);
-    const wear = wearAndTearCostFor(miles, car);
-    const tax = taxToSetAside(pay, miles, car);
-    const keep = pay - gas - wear - tax;
-    const minutes = minutesForTrip(miles, car);
-    const hourly = keep / (minutes / 60);
-    const perMile = keep / miles;
-
-    return {
-        pay: pay,
-        miles: miles,
-        minutes: Math.round(minutes),
-        gas: gas,
-        wear: wear,
-        tax: tax,
-        keep: keep,
-        hourly: hourly,
-        perMile: perMile,
-        grade: hourlyGrade(hourly, perMile),
-        perMileMark: perMileGrade(hourly, perMile)
-    };
-};
+const ROUGH_MONEY_FORMAT = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", trailingZeroDisplay: "stripIfInteger" });
 
 const payNeededToHit = (miles, goalHourly, car) => {
     const hours = minutesForTrip(miles, car) / 60;
     const gas = gasCostFor(miles, car);
     const wear = wearAndTearCostFor(miles, car);
-    const deduction = mileageDeductionFor(miles);
+    const deduction = mileageDeductionFor(miles, car);
     const keepWanted = goalHourly * hours;
     const pay = (keepWanted + gas + wear - deduction * car.taxRate) / (1 - car.taxRate);
 
@@ -188,7 +77,7 @@ const readTypedOffer = () => {
     const milesAreUsable = milesBox.value.trim() !== "" && Number.isFinite(miles) && miles > 0;
 
     if (!payIsUsable || !milesAreUsable) return null;
-    return { pay: pay, miles: farTripBox.checked ? miles * 2 : miles };
+    return { pay: pay, miles: miles, farTrip: farTripBox.checked };
 };
 
 let offerOnScreen = null;
@@ -221,7 +110,7 @@ const showOffer = (offer) => {
     perMileReadout.dataset.grade = offer.perMileMark;
 
     factKeep.textContent = money(offer.keep);
-    factTime.textContent = offer.minutes + " min";
+    factTime.textContent = Math.round(offer.minutes) + " min";
     factCosts.textContent = money(offer.gas + offer.wear + offer.tax);
 
     mathPay.textContent = money(offer.pay);
@@ -232,15 +121,21 @@ const showOffer = (offer) => {
 };
 
 const updateVerdict = () => {
+    const settings = loadSettings();
+    const carIsReady = carIsSetUp(settings);
     const typed = readTypedOffer();
 
-    if (typed === null) {
+    noSetupCard.hidden = carIsReady;
+    calculatorBody.hidden = !carIsReady;
+    cheatSheetButton.hidden = !carIsReady;
+
+    if (!carIsReady || typed === null) {
         showNothingTypedYet();
     } else {
-        showOffer(evaluateOffer(typed.pay, typed.miles, carFrom(loadSettings())));
+        showOffer(evaluateOffer(typed.pay, typed.miles, typed.farTrip, carFrom(settings, new Date())));
     }
 
-    if (cheatSheetOverlay.open) {
+    if (carIsReady && cheatSheetOverlay.open) {
         fillCheatSheet();
     }
 };
@@ -264,15 +159,20 @@ const clearForm = () => {
     payBox.focus();
 };
 
+const offerCanBeSaved = (offer) => {
+    return offer !== null && Number.isFinite(offer.hourly) && Number.isFinite(offer.perMile);
+};
+
 const logOffer = (took) => {
-    if (offerOnScreen !== null) {
-        addOffer({
-            v: 1,
+    if (offerCanBeSaved(offerOnScreen)) {
+        const saved = addOffer({
+            v: 2,
             id: newOfferId(),
             at: new Date().toISOString(),
             took: took,
             pay: offerOnScreen.pay,
             miles: offerOnScreen.miles,
+            farTrip: offerOnScreen.farTrip,
             minutes: offerOnScreen.minutes,
             gas: offerOnScreen.gas,
             wear: offerOnScreen.wear,
@@ -282,6 +182,10 @@ const logOffer = (took) => {
             perMile: offerOnScreen.perMile,
             grade: offerOnScreen.grade
         });
+
+        if (!saved) {
+            window.alert("Couldn't save this dash on this phone.");
+        }
 
         refreshTodayBar();
     }
@@ -293,8 +197,8 @@ let cheatSheetGoalHourly = GOOD_HOURLY;
 
 const fillCheatSheet = () => {
     const settings = loadSettings();
-    const car = carFrom(settings);
-    const milesYouTyped = Math.round(Number(milesBox.value));
+    const car = carFrom(settings, new Date());
+    const milesYouTyped = Math.round(milesDriven(Number(milesBox.value), farTripBox.checked));
 
     cheatSheetRows.forEach((row) => {
         const miles = Number(row.dataset.mi);
@@ -309,8 +213,12 @@ const fillCheatSheet = () => {
         row.querySelector(".r__flag").hidden = !isYourOffer;
     });
 
-    const fiveMilePay = payNeededToHit(5, cheatSheetGoalHourly, car);
-    cheatSheetHeadline.textContent = money(fiveMilePay / 5) + " a mile";
+    const payForNoMiles = payNeededToHit(0, cheatSheetGoalHourly, car);
+    const payPerMile = (payNeededToHit(10, cheatSheetGoalHourly, car) - payForNoMiles) / 10;
+    const roundedBase = Math.round(payForNoMiles * 2) / 2;
+    const roundedPerMile = Math.round(payPerMile * 4) / 4;
+    cheatSheetHeadline.textContent = ROUGH_MONEY_FORMAT.format(roundedBase) + ", plus " +
+        ROUGH_MONEY_FORMAT.format(roundedPerMile) + " a mile";
 
     const chipText = [
         (settings.mpg || "?") + " mpg",
@@ -341,6 +249,10 @@ const openCheatSheet = () => {
 };
 
 const closeCheatSheet = () => {
+    if (cheatSheetCloseTimer !== null) {
+        window.clearTimeout(cheatSheetCloseTimer);
+    }
+
     cheatSheetOverlay.classList.remove("sheet-overlay--open");
     cheatSheetPanel.classList.remove("sheet--open");
 
@@ -361,40 +273,42 @@ const setCheatSheetGoal = (goalHourly, buttonToTurnOn, buttonToTurnOff) => {
     fillCheatSheet();
 };
 
-const settingsAtLoad = loadSettings();
-
-const carIsSetUp =
-    Number(settingsAtLoad.mpg) > 0 &&
-    isFilledNumber(settingsAtLoad.gasPrice) &&
-    Object.hasOwn(STATE_TAX_RATES, settingsAtLoad.homeState ?? "");
-
-if (!carIsSetUp) {
-    noSetupCard.hidden = false;
-    calculatorBody.hidden = true;
-} else {
-    payBox.addEventListener("input", updateVerdict);
-    milesBox.addEventListener("input", updateVerdict);
-    farTripBox.addEventListener("change", updateVerdict);
-
-    skipButton.addEventListener("click", () => logOffer(false));
-    takeButton.addEventListener("click", () => logOffer(true));
-
-    cheatSheetButton.addEventListener("click", openCheatSheet);
-    cheatSheetCloseButton.addEventListener("click", closeCheatSheet);
-
-    cheatSheetOverlay.addEventListener("click", (event) => {
-        if (event.target === cheatSheetOverlay) closeCheatSheet();
-    });
-
-    cheatSheetOverlay.addEventListener("cancel", (event) => {
+const moveToMilesOnEnter = (event) => {
+    if (event.key === "Enter") {
         event.preventDefault();
-        closeCheatSheet();
-    });
+        milesBox.focus();
+    }
+};
 
-    goodButton.addEventListener("click", () => setCheatSheetGoal(GOOD_HOURLY, goodButton, greatButton));
-    greatButton.addEventListener("click", () => setCheatSheetGoal(GREAT_HOURLY, greatButton, goodButton));
+payBox.addEventListener("input", updateVerdict);
+payBox.addEventListener("keydown", moveToMilesOnEnter);
+milesBox.addEventListener("input", updateVerdict);
+farTripBox.addEventListener("change", updateVerdict);
 
-    updateVerdict();
-}
+skipButton.addEventListener("click", () => logOffer(false));
+takeButton.addEventListener("click", () => logOffer(true));
 
+cheatSheetButton.addEventListener("click", openCheatSheet);
+cheatSheetCloseButton.addEventListener("click", closeCheatSheet);
+
+cheatSheetOverlay.addEventListener("click", (event) => {
+    if (event.target === cheatSheetOverlay) closeCheatSheet();
+});
+
+cheatSheetOverlay.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeCheatSheet();
+});
+
+goodButton.addEventListener("click", () => setCheatSheetGoal(GOOD_HOURLY, goodButton, greatButton));
+greatButton.addEventListener("click", () => setCheatSheetGoal(GREAT_HOURLY, greatButton, goodButton));
+
+window.addEventListener("pageshow", (event) => {
+    if (event.persisted) {
+        updateVerdict();
+        refreshTodayBar();
+    }
+});
+
+updateVerdict();
 refreshTodayBar();

@@ -3,6 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
   <meta name="description" content="Type in a DoorDash offer and see what it really pays after gas, wear, and taxes.">
@@ -10,7 +11,7 @@
   <meta name="theme-color" content="#1D1D1D" media="(prefers-color-scheme: dark)">
   <title>Calculator &middot; DashCalc</title>
 
-  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="tokens.css?v=2">
 
   <style>
     .topbar {
@@ -18,9 +19,10 @@
       top: 0;
       z-index: 10;
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 8px 12px;
       padding: 11px 16px;
       background: var(--surface);
       border-bottom: 1px solid var(--border);
@@ -35,9 +37,12 @@
 
     .topbar__actions {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
+      justify-content: flex-end;
       gap: 8px;
       min-width: 0;
+      margin-left: auto;
     }
 
     .topbar__sheet {
@@ -54,6 +59,10 @@
       text-decoration: none;
       white-space: nowrap;
       transition: border-color 150ms ease, background-color 150ms ease;
+    }
+
+    .topbar__sheet[hidden] {
+      display: none;
     }
 
     .topbar__sheet:focus-visible {
@@ -686,22 +695,13 @@
       transform: translateY(0);
     }
 
-    .sheet__grab {
-      flex-shrink: 0;
-      width: 40px;
-      height: 5px;
-      margin: 10px auto 0;
-      border-radius: 999px;
-      background: var(--border-strong);
-    }
-
     .sheet__head {
       flex-shrink: 0;
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
       gap: 12px;
-      padding: 12px 16px 14px;
+      padding: 16px 16px 14px;
     }
 
     .sheet__title {
@@ -748,6 +748,7 @@
     }
 
     .quick__v {
+      text-wrap: balance;
       margin-top: 5px;
       font-size: 1.5rem;
       font-weight: 900;
@@ -809,6 +810,11 @@
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
+    }
+
+    .list:focus-visible {
+      outline: 2px solid var(--red);
+      outline-offset: -2px;
     }
 
     .r {
@@ -956,6 +962,12 @@
 
       .credit__link:hover {
         color: var(--accent);
+      }
+    }
+
+    @media (max-width: 370px) {
+      .topbar__sheet svg {
+        display: none;
       }
     }
 
@@ -1141,10 +1153,6 @@
         transform: none;
       }
 
-      .sheet__grab {
-        display: none;
-      }
-
       .sheet__foot {
         padding-bottom: 18px;
       }
@@ -1247,7 +1255,7 @@
       </div>
     </header>
 
-    <div class="today">
+    <section class="today" aria-label="Today">
       <div class="today__cell">
         <div class="today__v" id="today-seen">0</div>
         <div class="today__k">offers seen</div>
@@ -1264,7 +1272,7 @@
         <div class="today__v" id="today-permile">&mdash;</div>
         <div class="today__k">a mile</div>
       </div>
-    </div>
+    </section>
 
     <main class="content">
       <h1 class="vh">Offer calculator</h1>
@@ -1272,7 +1280,7 @@
       <section class="card" id="no-setup" hidden>
         <div class="setup__body">
           <h2 class="setup__t">Set up your car first</h2>
-          <p class="setup__s">We need your gas mileage and your state before we can tell you what an offer is really
+          <p class="setup__s">Fill in every box on the setup page, then we can tell you what an offer is really
             worth.</p>
           <a class="setup__go" href="index.html">Go to setup</a>
         </div>
@@ -1411,8 +1419,6 @@
   <dialog class="sheet-overlay" id="sheet-overlay" aria-labelledby="sheet-title">
     <div class="sheet" id="sheet">
 
-      <span class="sheet__grab" aria-hidden="true"></span>
-
       <div class="sheet__head">
         <div>
           <h2 class="sheet__title" id="sheet-title">Cheat sheet</h2>
@@ -1437,7 +1443,7 @@
         <span>It should pay</span>
       </div>
 
-      <div class="list" id="sheet-list">
+      <div class="list" id="sheet-list" tabindex="0" role="region" aria-label="What each trip should pay">
         <div class="r" data-mi="1">
           <div class="r__mi"><b>1</b><i>mile</i></div>
           <div class="r__pay"><span class="r__cur">$</span><span class="r__d">&mdash;</span><span class="r__c"></span>
@@ -1543,8 +1549,9 @@
     </div>
   </dialog>
 
-  <script src="offers.js"></script>
-  <script src="calculator.js"></script>
+  <script src="shared.js?v=2"></script>
+  <script src="offers.js?v=2"></script>
+  <script src="calculator.js?v=2"></script>
 </body>
 
 </html>

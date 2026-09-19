@@ -71,8 +71,6 @@ summary {
   --border: #E3E1DE;
   --border-strong: #808080;
 
-  --good: #12824A;
-
   --tap: 60px;
   --radius: 14px;
 
@@ -116,8 +114,6 @@ summary {
 
     --border: #333230;
     --border-strong: #7A7A7A;
-
-    --good: #4ADE80;
 
     --grade-a: #3FBF89;
     --grade-b: #63C463;
@@ -235,6 +231,7 @@ body {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }

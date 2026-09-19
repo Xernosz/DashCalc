@@ -12,7 +12,16 @@ const entryList = document.getElementById("entry-list");
 const undoBar = document.getElementById("undo-bar");
 const undoButton = document.getElementById("undo-btn");
 
-const money = (amount) => "$" + amount.toFixed(2);
+const DAY_FORMAT = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
+const TIME_FORMAT = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" });
+
+const moneyOrDash = (amount) => {
+    return Number.isFinite(amount) ? money(amount) : "—";
+};
+
+const milesOrDash = (miles) => {
+    return Number.isFinite(miles) ? miles + " mi" : "— mi";
+};
 
 const perMileOf = (offer) => {
     if (Number.isFinite(offer.perMile)) return offer.perMile;
@@ -21,9 +30,8 @@ const perMileOf = (offer) => {
 
 const whenItHappened = (isoDate) => {
     const moment = new Date(isoDate);
-    const day = moment.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-    const time = moment.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-    return day + " at " + time;
+    if (Number.isNaN(moment.getTime())) return "";
+    return DAY_FORMAT.format(moment) + " at " + TIME_FORMAT.format(moment);
 };
 
 const spanWith = (className, text) => {
@@ -34,7 +42,7 @@ const spanWith = (className, text) => {
 };
 
 const parseEditedNumber = (text) => {
-    return Number(text.replace(/[^0-9.]/g, ""));
+    return Number(text.replace("$", "").replace("mi", "").trim());
 };
 
 const commitFieldOnEnter = (event) => {
@@ -45,29 +53,44 @@ const commitFieldOnEnter = (event) => {
 };
 
 const saveEditedField = (event) => {
-    const id = event.target.closest(".entry").dataset.id;
+    const entry = event.target.closest(".entry");
     const field = event.target.dataset.field;
     const value = parseEditedNumber(event.target.textContent);
+    const shownText = event.target.dataset.shown;
 
-    if (Number.isFinite(value) && value > 0) {
-        updateOfferField(id, field, value);
+    if (value === parseEditedNumber(shownText)) {
+        event.target.textContent = shownText;
+        return;
     }
 
-    showLedger();
+    if (Number.isFinite(value) && value > 0) {
+        updateOfferField(entry.dataset.id, field, value);
+    }
+
+    const offers = activeOffers();
+    const offer = offers.find((offer) => offer.id === entry.dataset.id);
+
+    showTotals(offers);
+    if (offer !== undefined) entry.replaceWith(buildEntry(offer));
+};
+
+const editableSpan = (className, text, field, label) => {
+    const span = spanWith(className, text);
+    span.contentEditable = "plaintext-only";
+    span.inputMode = "decimal";
+    span.enterKeyHint = "done";
+    span.dataset.field = field;
+    span.dataset.shown = text;
+    span.setAttribute("role", "textbox");
+    span.setAttribute("aria-label", label);
+    span.addEventListener("blur", saveEditedField);
+    span.addEventListener("keydown", commitFieldOnEnter);
+    return span;
 };
 
 const buildEntry = (offer) => {
-    const payValue = spanWith("entry__pay", money(offer.pay));
-    payValue.contentEditable = "plaintext-only";
-    payValue.dataset.field = "pay";
-    payValue.addEventListener("blur", saveEditedField);
-    payValue.addEventListener("keydown", commitFieldOnEnter);
-
-    const milesValue = spanWith("entry__miles", offer.miles.toFixed(1) + " mi");
-    milesValue.contentEditable = "plaintext-only";
-    milesValue.dataset.field = "miles";
-    milesValue.addEventListener("blur", saveEditedField);
-    milesValue.addEventListener("keydown", commitFieldOnEnter);
+    const payValue = editableSpan("entry__pay", moneyOrDash(offer.pay), "pay", "Pay");
+    const milesValue = editableSpan("entry__miles", milesOrDash(offer.miles), "miles", "Miles");
 
     const topLine = document.createElement("div");
     topLine.className = "entry__top";
@@ -76,8 +99,8 @@ const buildEntry = (offer) => {
     const rateLine = document.createElement("div");
     rateLine.className = "entry__rates";
     rateLine.append(
-        spanWith("entry__rate", money(offer.hourly) + " an hour"),
-        spanWith("entry__rate", money(perMileOf(offer)) + " a mile")
+        spanWith("entry__rate", moneyOrDash(offer.hourly) + " an hour"),
+        spanWith("entry__rate", moneyOrDash(perMileOf(offer)) + " a mile")
     );
 
     const stamp = document.createElement("time");
@@ -86,11 +109,10 @@ const buildEntry = (offer) => {
 
     const metaLine = document.createElement("div");
     metaLine.className = "entry__meta";
-    metaLine.append(
-        spanWith("entry__tag " + (offer.took ? "entry__tag--took" : "entry__tag--passed"),
-            offer.took ? "Took" : "Passed"),
-        stamp
-    );
+    metaLine.append(spanWith("entry__tag " + (offer.took ? "entry__tag--took" : "entry__tag--passed"),
+        offer.took ? "Took" : "Passed"));
+    if (offer.farTrip) metaLine.append(spanWith("entry__tag entry__tag--far", "Far trip"));
+    metaLine.append(stamp);
 
     const details = document.createElement("div");
     details.className = "entry__main";
@@ -112,9 +134,8 @@ const buildEntry = (offer) => {
     return entry;
 };
 
-const showLedger = () => {
-    const newestFirst = activeOffers().slice().reverse();
-    const totals = summarizeOffers(newestFirst);
+const showTotals = (offers) => {
+    const totals = summarizeOffers(offers);
 
     sumTook.textContent = totals.took;
     sumPassed.textContent = totals.passed;
@@ -125,9 +146,14 @@ const showLedger = () => {
     sumHourly.dataset.grade = hourlyGrade(totals.hourly, totals.perMile);
     sumPerMile.dataset.grade = perMileGrade(totals.hourly, totals.perMile);
 
-    entryCount.textContent = newestFirst.length === 1 ? "1 dash" : newestFirst.length + " dashes";
-    nothingLoggedCard.hidden = newestFirst.length > 0;
+    entryCount.textContent = offers.length === 1 ? "1 dash" : offers.length + " dashes";
+    nothingLoggedCard.hidden = offers.length > 0;
+};
 
+const showLedger = () => {
+    const newestFirst = activeOffers().slice().reverse();
+
+    showTotals(newestFirst);
     entryList.replaceChildren();
     newestFirst.forEach((offer) => {
         entryList.append(buildEntry(offer));
