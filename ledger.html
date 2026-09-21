@@ -3,7 +3,8 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
   <meta name="description" content="Every dash you took or passed, and what they really paid.">
@@ -707,12 +708,11 @@
       </div>
 
       <section class="backup__section">
-        <h3 class="backup__label">Save a copy</h3>
-        <p class="backup__hint">Keep it somewhere safe, like your photos or a cloud drive. It has your dashes and your car
-          setup.</p>
+        <h3 class="backup__label">Export a copy</h3>
+        <p class="backup__hint">Keep your dashes and car setup somewhere safe.</p>
         <button class="backup__choice" id="backup-json" type="button">
           <span class="backup__choice-t">Backup file</span>
-          <span class="backup__choice-s">Use this to put your journal back later.</span>
+          <span class="backup__choice-s">Use this in order to import back to the website later on.</span>
         </button>
         <button class="backup__choice" id="backup-csv" type="button">
           <span class="backup__choice-t">Spreadsheet</span>
@@ -721,7 +721,7 @@
       </section>
 
       <section class="backup__section">
-        <h3 class="backup__label">Put a backup back</h3>
+        <h3 class="backup__label">Import a backup</h3>
         <p class="backup__hint">Adds dashes from your file that aren't here yet. Nothing gets deleted. Your car setup
           only comes back if this phone doesn't have one yet.</p>
         <label class="backup__choice" for="restore-input">

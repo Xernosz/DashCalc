@@ -199,4 +199,218 @@ undoButton.addEventListener("click", () => {
     hideUndoBar();
 });
 
+const backupOpen = document.getElementById("backup-open");
+const backupOverlay = document.getElementById("backup-overlay");
+const backup = document.getElementById("backup");
+const backupClose = document.getElementById("backup-close");
+const restoreStatus = document.getElementById("restore-status");
+const backupJsonButton = document.getElementById("backup-json");
+const backupCsvButton = document.getElementById("backup-csv");
+const restoreInput = document.getElementById("restore-input");
+
+let backupTimeoutId = null;
+
+const openBackupPanel = () => {
+    if (backupTimeoutId !== null) {
+        window.clearTimeout(backupTimeoutId);
+        backupTimeoutId = null;
+    }
+
+    restoreStatus.textContent = "";
+    restoreStatus.classList.remove("backup__status--good", "backup__status--bad");
+    backupOverlay.showModal();
+    void backup.offsetWidth;
+    backupOverlay.classList.add("backup-overlay--open");
+    backup.classList.add("backup--open");
+};
+
+const closeBackupPanel = () => {
+    if (backupTimeoutId !== null) {
+        window.clearTimeout(backupTimeoutId);
+    }
+
+    backupOverlay.classList.remove("backup-overlay--open");
+    backup.classList.remove("backup--open");
+    backupTimeoutId = window.setTimeout(() => {
+        backupOverlay.close();
+        backupTimeoutId = null;
+    }, 220);
+};
+
+backupOpen.addEventListener("click", openBackupPanel);
+backupClose.addEventListener("click", closeBackupPanel);
+backupOverlay.addEventListener("click", (event) => {
+    if (event.target === backupOverlay) {
+        closeBackupPanel();
+    }
+});
+
+backupOverlay.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeBackupPanel();
+});
+
+const downloadFile = (fileName, text, type) => {
+    const blob = new Blob([text], { type: type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    window.setTimeout(() => {
+        URL.revokeObjectURL(url);
+    }, 1000);
+};
+
+const makeBackupJson = () => {
+    const backupObject = { v: 1, savedAt: new Date().toISOString(), settings: loadSettings(), offers: activeOffers() };
+    const newBackup = JSON.stringify(backupObject, null, 2);
+    return newBackup;
+};
+
+const dateForFileName = () => {
+    return new Date().toISOString().slice(0, 10);
+};
+
+backupJsonButton.addEventListener("click", () => {
+    const backupFileName = `dashcalc-logs-${dateForFileName()}.json`;
+    const backupText = makeBackupJson();
+    downloadFile(backupFileName, backupText, "application/json");
+});
+
+const CSV_HEADER = [
+    "date", "time", "took or passed", "pay", "miles", "far trip",
+    "miles driven", "minutes", "$ an hour", "$ a mile", "grade"
+];
+
+const twoDigits = (number) => {
+    return String(number).padStart(2, "0");
+};
+
+const numberOrEmpty = (value, places) => {
+    return Number.isFinite(value) ? value.toFixed(places) : "";
+};
+
+const csvRowFor = (offer) => {
+    const moment = new Date(offer.at);
+    const validMoment = !Number.isNaN(moment.getTime());
+    const date = validMoment
+        ? `${moment.getFullYear()}-${twoDigits(moment.getMonth() + 1)}-${twoDigits(moment.getDate())}`
+        : "";
+    const time = validMoment
+        ? `${twoDigits(moment.getHours())}:${twoDigits(moment.getMinutes())}`
+        : "";
+    const driven = Number.isFinite(offer.miles) ? milesDriven(offer.miles, offer.farTrip) : null;
+
+    return [
+        date,
+        time,
+        offer.took ? "took" : "passed",
+        numberOrEmpty(offer.pay, 2),
+        numberOrEmpty(offer.miles, 2),
+        offer.farTrip ? "yes" : "no",
+        numberOrEmpty(driven, 2),
+        numberOrEmpty(offer.minutes, 1),
+        numberOrEmpty(offer.hourly, 2),
+        numberOrEmpty(perMileOf(offer), 2),
+        offer.grade ?? ""
+    ];
+};
+
+const makeBackupCsv = () => {
+    const rows = [CSV_HEADER, ...activeOffers().map(csvRowFor)];
+    return rows.map((row) => row.join(",")).join("\n");
+};
+
+backupCsvButton.addEventListener("click", () => {
+    const csvFileName = `dashcalc-journal-${dateForFileName()}.csv`;
+    downloadFile(csvFileName, makeBackupCsv(), "text/csv");
+});
+
+const showRestoreMessage = (text, isGood) => {
+    restoreStatus.textContent = text;
+    restoreStatus.classList.remove("backup__status--good", "backup__status--bad");
+    if (isGood) {
+        restoreStatus.classList.add("backup__status--good");
+    } else restoreStatus.classList.add("backup__status--bad");
+};
+
+const NOT_A_BACKUP_MESSAGE = "That file isn't a DashCalc backup.";
+
+const isObject = (value) => {
+    return typeof value === "object" && value !== null;
+};
+
+const isUsableOffer = (offer) => {
+    return isObject(offer) &&
+        typeof offer.id === "string" &&
+        typeof offer.at === "string" && !Number.isNaN(new Date(offer.at).getTime()) &&
+        Number.isFinite(offer.pay) && offer.pay > 0 &&
+        Number.isFinite(offer.miles) && offer.miles > 0;
+};
+
+const restoreSettingsIfNeeded = (fileSettings) => {
+    if (carIsSetUp(loadSettings())) return false;
+    if (!isObject(fileSettings) || !carIsSetUp(fileSettings)) return false;
+
+    return writeStorage(SETTINGS_STORAGE_KEY, JSON.stringify({ ...fileSettings, v: 1 }));
+};
+
+const restoreFromBackupText = (text) => {
+    let backupData;
+    try {
+        backupData = JSON.parse(text);
+    } catch {
+        showRestoreMessage(NOT_A_BACKUP_MESSAGE, false);
+        return;
+    }
+
+    if (!isObject(backupData) || backupData.v !== 1 || !Array.isArray(backupData.offers)) {
+        showRestoreMessage(NOT_A_BACKUP_MESSAGE, false);
+        return;
+    }
+
+    const usableOffers = backupData.offers.filter(isUsableOffer);
+    const skippedCount = backupData.offers.length - usableOffers.length;
+
+    const savedOffers = loadOffers();
+    const knownIds = new Set(savedOffers.map((offer) => offer.id));
+    const newOffers = [];
+    for (const offer of usableOffers) {
+        if (!knownIds.has(offer.id)) {
+            newOffers.push(offer);
+            knownIds.add(offer.id);
+        }
+    }
+
+    if (newOffers.length > 0) {
+        const combined = [...savedOffers, ...newOffers];
+        combined.sort((a, b) => new Date(a.at) - new Date(b.at));
+
+        if (!saveOffers(combined)) {
+            showRestoreMessage("Couldn't save on this phone. Its storage is full.", false);
+            return;
+        }
+    }
+
+    const setupCameBack = restoreSettingsIfNeeded(backupData.settings);
+    showLedger();
+
+    let message = "Nothing new to add.";
+    if (newOffers.length > 0) {
+        message = "Added " + (newOffers.length === 1 ? "1 dash" : newOffers.length + " dashes") + ".";
+    }
+    if (setupCameBack) message += " Your setup came back too.";
+    if (skippedCount > 0) message += " Skipped " + skippedCount + " that looked broken.";
+    showRestoreMessage(message, true);
+};
+
+restoreInput.addEventListener("change", async (event) => {
+    const file = event.target.files[0];
+    if (file === undefined) return;
+
+    restoreFromBackupText(await file.text());
+    event.target.value = "";
+});
+
 showLedger();
