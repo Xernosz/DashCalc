@@ -14,7 +14,9 @@ const loadOffers = () => {
 };
 
 const saveOffers = (offers) => {
-    return writeStorage(OFFERS_STORAGE_KEY, JSON.stringify(offers));
+    const saved = writeStorage(OFFERS_STORAGE_KEY, JSON.stringify(offers));
+    if (saved) askToKeepData();
+    return saved;
 };
 
 const newOfferId = () => {
@@ -65,7 +67,7 @@ const updateOfferField = (id, field, value) => {
     saveOffers(offers);
 };
 
-const activeOffers = () => {
+const offersNotDeleted = () => {
     return loadOffers().filter((offer) => !offer.deletedAt);
 };
 
@@ -77,7 +79,7 @@ const workDayOf = (moment) => {
 
 const offersFromToday = () => {
     const today = workDayOf(new Date());
-    return activeOffers().filter((offer) => workDayOf(new Date(offer.at)) === today);
+    return offersNotDeleted().filter((offer) => workDayOf(new Date(offer.at)) === today);
 };
 
 const DELETED_RECORD_LIFESPAN_DAYS = 30;
@@ -109,7 +111,7 @@ const summarizeOffers = (offers) => {
     return {
         seen: offers.length,
         took: taken.length,
-        passed: offers.length - taken.length,
+        skipped: offers.length - taken.length,
         kept: keptTotal,
         miles: milesTotal,
         hourly: hoursTotal > 0 ? keptTotal / hoursTotal : null,

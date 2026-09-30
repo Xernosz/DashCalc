@@ -1,7 +1,3 @@
-if (navigator.storage?.persist) {
-    navigator.storage.persist().catch(() => { });
-}
-
 const SETTINGS_STORAGE_KEY = "dashcalc-settings";
 const SELF_EMPLOYMENT_TAX_RATE = 0.153;
 const SHORTEST_POSSIBLE_TRIP_MINUTES = 5;
@@ -54,6 +50,14 @@ const readStorage = (key) => {
     }
 };
 
+let askedToKeepData = false;
+
+const askToKeepData = () => {
+    if (askedToKeepData || !navigator.storage?.persist) return;
+    askedToKeepData = true;
+    navigator.storage.persist().catch(() => { });
+};
+
 const writeStorage = (key, value) => {
     try {
         localStorage.setItem(key, value);
@@ -63,12 +67,16 @@ const writeStorage = (key, value) => {
     }
 };
 
-const loadSettings = () => {
-    const savedJson = readStorage(SETTINGS_STORAGE_KEY);
-    if (savedJson === null) return { v: 1 };
+const saveSettings = (settings) => {
+    const saved = writeStorage(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    if (saved) askToKeepData();
+    return saved;
+};
 
+const loadSettings = () => {
     try {
-        return JSON.parse(savedJson);
+        const saved = JSON.parse(readStorage(SETTINGS_STORAGE_KEY));
+        return saved !== null && typeof saved === "object" ? saved : { v: 1 };
     } catch {
         return { v: 1 };
     }
@@ -155,6 +163,29 @@ const hourlyGrade = (hourly, perMile) => {
 const perMileGrade = (hourly, perMile) => {
     if (isGold(hourly, perMile)) return "S";
     return perMile === null ? "" : gradeOnScale(perMile, PER_MILE_GRADES);
+};
+
+const replayPop = (element) => {
+    element.classList.remove("pop");
+    void element.offsetWidth;
+    element.classList.add("pop");
+};
+
+const sheetCloseTimers = new Map();
+
+const openSheet = (overlay, panel) => {
+    window.clearTimeout(sheetCloseTimers.get(overlay));
+    if (!overlay.open) overlay.showModal();
+    void panel.offsetWidth;
+    overlay.classList.add("is-open");
+    panel.classList.add("is-open");
+};
+
+const closeSheet = (overlay, panel, closeAfterMs) => {
+    window.clearTimeout(sheetCloseTimers.get(overlay));
+    overlay.classList.remove("is-open");
+    panel.classList.remove("is-open");
+    sheetCloseTimers.set(overlay, window.setTimeout(() => overlay.close(), closeAfterMs));
 };
 
 const evaluateOffer = (pay, miles, farTrip, car) => {
