@@ -1,5 +1,5 @@
 const sumTook = document.getElementById("sum-took");
-const sumPassed = document.getElementById("sum-passed");
+const sumSkipped = document.getElementById("sum-skipped");
 const sumKept = document.getElementById("sum-kept");
 const sumMiles = document.getElementById("sum-miles");
 const sumHourly = document.getElementById("sum-hourly");
@@ -8,11 +8,12 @@ const sumPerMile = document.getElementById("sum-permile");
 const entryCount = document.getElementById("entry-count");
 const nothingLoggedCard = document.getElementById("entry-blank");
 const entryList = document.getElementById("entry-list");
+const gradeStrip = document.getElementById("grade-strip");
 
 const undoBar = document.getElementById("undo-bar");
 const undoButton = document.getElementById("undo-btn");
 
-const DAY_FORMAT = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
+const DAY_FORMAT = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" });
 const TIME_FORMAT = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" });
 
 const moneyOrDash = (amount) => {
@@ -25,13 +26,28 @@ const milesOrDash = (miles) => {
 
 const perMileOf = (offer) => {
     if (Number.isFinite(offer.perMile)) return offer.perMile;
-    return offer.keep / offer.miles;
+    return offer.keep / milesDriven(offer.miles, offer.farTrip);
 };
 
-const whenItHappened = (isoDate) => {
+const timeOfDay = (isoDate) => {
     const moment = new Date(isoDate);
-    if (Number.isNaN(moment.getTime())) return "";
-    return DAY_FORMAT.format(moment) + " at " + TIME_FORMAT.format(moment);
+    return Number.isNaN(moment.getTime()) ? "" : TIME_FORMAT.format(moment);
+};
+
+const workDayLabel = (isoDate) => {
+    const moment = new Date(isoDate);
+    if (Number.isNaN(moment.getTime())) return "Earlier";
+
+    const now = new Date();
+    const dayBefore = new Date(now);
+    dayBefore.setDate(dayBefore.getDate() - 1);
+
+    if (workDayOf(moment) === workDayOf(now)) return "Today";
+    if (workDayOf(moment) === workDayOf(dayBefore)) return "Yesterday";
+
+    const shifted = new Date(moment);
+    shifted.setHours(shifted.getHours() - NEW_DAY_STARTS_AT_HOUR);
+    return DAY_FORMAT.format(shifted);
 };
 
 const spanWith = (className, text) => {
@@ -52,6 +68,10 @@ const commitFieldOnEnter = (event) => {
     }
 };
 
+const offersNewestFirst = () => {
+    return offersNotDeleted().sort((a, b) => (Date.parse(b.at) || 0) - (Date.parse(a.at) || 0));
+};
+
 const saveEditedField = (event) => {
     const entry = event.target.closest(".entry");
     const field = event.target.dataset.field;
@@ -63,11 +83,12 @@ const saveEditedField = (event) => {
         return;
     }
 
-    if (Number.isFinite(value) && value > 0) {
+    const makesSense = field === "pay" ? value >= 0 : value > 0;
+    if (Number.isFinite(value) && makesSense) {
         updateOfferField(entry.dataset.id, field, value);
     }
 
-    const offers = activeOffers();
+    const offers = offersNewestFirst();
     const offer = offers.find((offer) => offer.id === entry.dataset.id);
 
     showTotals(offers);
@@ -105,12 +126,12 @@ const buildEntry = (offer) => {
 
     const stamp = document.createElement("time");
     stamp.dateTime = offer.at;
-    stamp.textContent = whenItHappened(offer.at);
+    stamp.textContent = timeOfDay(offer.at);
 
     const metaLine = document.createElement("div");
     metaLine.className = "entry__meta";
-    metaLine.append(spanWith("entry__tag " + (offer.took ? "entry__tag--took" : "entry__tag--passed"),
-        offer.took ? "Took" : "Passed"));
+    metaLine.append(spanWith("entry__tag " + (offer.took ? "entry__tag--took" : "entry__tag--skipped"),
+        offer.took ? "Took" : "Skipped"));
     if (offer.farTrip) metaLine.append(spanWith("entry__tag entry__tag--far", "Far trip"));
     metaLine.append(stamp);
 
@@ -123,7 +144,13 @@ const buildEntry = (offer) => {
     deleteButton.type = "button";
     deleteButton.dataset.id = offer.id;
     deleteButton.setAttribute("aria-label", "Delete this dash");
-    deleteButton.textContent = "×";
+    const trashIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    const trashShape = document.createElementNS("http://www.w3.org/2000/svg", "use");
+    trashIcon.setAttribute("class", "icon");
+    trashIcon.setAttribute("aria-hidden", "true");
+    trashShape.setAttribute("href", "icons/ui.svg#trash");
+    trashIcon.append(trashShape);
+    deleteButton.append(trashIcon);
 
     const entry = document.createElement("article");
     entry.className = "entry";
@@ -138,7 +165,7 @@ const showTotals = (offers) => {
     const totals = summarizeOffers(offers);
 
     sumTook.textContent = totals.took;
-    sumPassed.textContent = totals.passed;
+    sumSkipped.textContent = totals.skipped;
     sumKept.textContent = totals.took > 0 ? money(totals.kept) : "—";
     sumMiles.textContent = totals.took > 0 ? totals.miles.toFixed(1) : "—";
     sumHourly.textContent = totals.hourly === null ? "—" : money(totals.hourly);
@@ -146,16 +173,32 @@ const showTotals = (offers) => {
     sumHourly.dataset.grade = hourlyGrade(totals.hourly, totals.perMile);
     sumPerMile.dataset.grade = perMileGrade(totals.hourly, totals.perMile);
 
+    gradeStrip.replaceChildren(...offers.slice(0, 12).reverse().map((offer) => {
+        const chip = spanWith("strip__chip" + (offer.took ? "" : " strip__chip--skipped"), offer.grade === "S" ? "★" : offer.grade);
+        chip.dataset.grade = offer.grade;
+        return chip;
+    }));
+
     entryCount.textContent = offers.length === 1 ? "1 dash" : offers.length + " dashes";
     nothingLoggedCard.hidden = offers.length > 0;
 };
 
-const showLedger = () => {
-    const newestFirst = activeOffers().slice().reverse();
+const showJournal = () => {
+    const newestFirst = offersNewestFirst();
 
     showTotals(newestFirst);
     entryList.replaceChildren();
+
+    let dayShown = null;
     newestFirst.forEach((offer) => {
+        const day = workDayLabel(offer.at);
+        if (day !== dayShown) {
+            dayShown = day;
+            const heading = document.createElement("h3");
+            heading.className = "entry-day";
+            heading.textContent = day;
+            entryList.append(heading);
+        }
         entryList.append(buildEntry(offer));
     });
 };
@@ -163,6 +206,8 @@ const showLedger = () => {
 const UNDO_WINDOW_MS = 8000;
 let undoTimeoutId = null;
 let idPendingUndo = null;
+
+undoBar.style.setProperty("--undo-time", UNDO_WINDOW_MS + "ms");
 
 const hideUndoBar = () => {
     if (undoTimeoutId !== null) {
@@ -179,6 +224,9 @@ const showUndoBar = (id) => {
 
     idPendingUndo = id;
     undoBar.hidden = false;
+    undoBar.classList.remove("undo--timing");
+    void undoBar.offsetWidth;
+    undoBar.classList.add("undo--timing");
     undoTimeoutId = window.setTimeout(hideUndoBar, UNDO_WINDOW_MS);
 };
 
@@ -187,15 +235,16 @@ entryList.addEventListener("click", (event) => {
     if (deleteButton === null) return;
 
     deleteOffer(deleteButton.dataset.id);
-    showLedger();
+    showJournal();
     showUndoBar(deleteButton.dataset.id);
+    undoButton.focus();
 });
 
 undoButton.addEventListener("click", () => {
     if (idPendingUndo === null) return;
 
     restoreOffer(idPendingUndo);
-    showLedger();
+    showJournal();
     hideUndoBar();
 });
 
@@ -208,33 +257,14 @@ const backupJsonButton = document.getElementById("backup-json");
 const backupCsvButton = document.getElementById("backup-csv");
 const restoreInput = document.getElementById("restore-input");
 
-let backupTimeoutId = null;
-
 const openBackupPanel = () => {
-    if (backupTimeoutId !== null) {
-        window.clearTimeout(backupTimeoutId);
-        backupTimeoutId = null;
-    }
-
     restoreStatus.textContent = "";
     restoreStatus.classList.remove("backup__status--good", "backup__status--bad");
-    backupOverlay.showModal();
-    void backup.offsetWidth;
-    backupOverlay.classList.add("backup-overlay--open");
-    backup.classList.add("backup--open");
+    openSheet(backupOverlay, backup);
 };
 
 const closeBackupPanel = () => {
-    if (backupTimeoutId !== null) {
-        window.clearTimeout(backupTimeoutId);
-    }
-
-    backupOverlay.classList.remove("backup-overlay--open");
-    backup.classList.remove("backup--open");
-    backupTimeoutId = window.setTimeout(() => {
-        backupOverlay.close();
-        backupTimeoutId = null;
-    }, 220);
+    closeSheet(backupOverlay, backup, 220);
 };
 
 backupOpen.addEventListener("click", openBackupPanel);
@@ -263,28 +293,25 @@ const downloadFile = (fileName, text, type) => {
 };
 
 const makeBackupJson = () => {
-    const backupObject = { v: 1, savedAt: new Date().toISOString(), settings: loadSettings(), offers: activeOffers() };
-    const newBackup = JSON.stringify(backupObject, null, 2);
-    return newBackup;
-};
-
-const dateForFileName = () => {
-    return new Date().toISOString().slice(0, 10);
+    const backupData = { v: 1, savedAt: new Date().toISOString(), settings: loadSettings(), offers: offersNotDeleted() };
+    return JSON.stringify(backupData, null, 2);
 };
 
 backupJsonButton.addEventListener("click", () => {
-    const backupFileName = `dashcalc-logs-${dateForFileName()}.json`;
-    const backupText = makeBackupJson();
-    downloadFile(backupFileName, backupText, "application/json");
+    downloadFile("dashcalc-backup-" + localDate(new Date()) + ".json", makeBackupJson(), "application/json");
 });
 
 const CSV_HEADER = [
-    "date", "time", "took or passed", "pay", "miles", "far trip",
+    "date", "time", "took or skipped", "pay", "miles", "far trip",
     "miles driven", "minutes", "$ an hour", "$ a mile", "grade"
 ];
 
 const twoDigits = (number) => {
     return String(number).padStart(2, "0");
+};
+
+const localDate = (moment) => {
+    return moment.getFullYear() + "-" + twoDigits(moment.getMonth() + 1) + "-" + twoDigits(moment.getDate());
 };
 
 const numberOrEmpty = (value, places) => {
@@ -294,18 +321,14 @@ const numberOrEmpty = (value, places) => {
 const csvRowFor = (offer) => {
     const moment = new Date(offer.at);
     const validMoment = !Number.isNaN(moment.getTime());
-    const date = validMoment
-        ? `${moment.getFullYear()}-${twoDigits(moment.getMonth() + 1)}-${twoDigits(moment.getDate())}`
-        : "";
-    const time = validMoment
-        ? `${twoDigits(moment.getHours())}:${twoDigits(moment.getMinutes())}`
-        : "";
+    const date = validMoment ? localDate(moment) : "";
+    const time = validMoment ? twoDigits(moment.getHours()) + ":" + twoDigits(moment.getMinutes()) : "";
     const driven = Number.isFinite(offer.miles) ? milesDriven(offer.miles, offer.farTrip) : null;
 
     return [
         date,
         time,
-        offer.took ? "took" : "passed",
+        offer.took ? "took" : "skipped",
         numberOrEmpty(offer.pay, 2),
         numberOrEmpty(offer.miles, 2),
         offer.farTrip ? "yes" : "no",
@@ -318,24 +341,21 @@ const csvRowFor = (offer) => {
 };
 
 const makeBackupCsv = () => {
-    const rows = [CSV_HEADER, ...activeOffers().map(csvRowFor)];
+    const rows = [CSV_HEADER, ...offersNotDeleted().map(csvRowFor)];
     return rows.map((row) => row.join(",")).join("\n");
 };
 
 backupCsvButton.addEventListener("click", () => {
-    const csvFileName = `dashcalc-journal-${dateForFileName()}.csv`;
-    downloadFile(csvFileName, makeBackupCsv(), "text/csv");
+    downloadFile("dashcalc-journal-" + localDate(new Date()) + ".csv", makeBackupCsv(), "text/csv");
 });
 
 const showRestoreMessage = (text, isGood) => {
     restoreStatus.textContent = text;
     restoreStatus.classList.remove("backup__status--good", "backup__status--bad");
-    if (isGood) {
-        restoreStatus.classList.add("backup__status--good");
-    } else restoreStatus.classList.add("backup__status--bad");
+    restoreStatus.classList.add(isGood ? "backup__status--good" : "backup__status--bad");
 };
 
-const NOT_A_BACKUP_MESSAGE = "That file isn't a DashCalc backup.";
+const NOT_A_BACKUP_MESSAGE = "That file isn’t a DashCalc backup.";
 
 const isObject = (value) => {
     return typeof value === "object" && value !== null;
@@ -345,7 +365,7 @@ const isUsableOffer = (offer) => {
     return isObject(offer) &&
         typeof offer.id === "string" &&
         typeof offer.at === "string" && !Number.isNaN(new Date(offer.at).getTime()) &&
-        Number.isFinite(offer.pay) && offer.pay > 0 &&
+        Number.isFinite(offer.pay) && offer.pay >= 0 &&
         Number.isFinite(offer.miles) && offer.miles > 0;
 };
 
@@ -353,7 +373,7 @@ const restoreSettingsIfNeeded = (fileSettings) => {
     if (carIsSetUp(loadSettings())) return false;
     if (!isObject(fileSettings) || !carIsSetUp(fileSettings)) return false;
 
-    return writeStorage(SETTINGS_STORAGE_KEY, JSON.stringify({ ...fileSettings, v: 1 }));
+    return saveSettings({ ...fileSettings, v: 1 });
 };
 
 const restoreFromBackupText = (text) => {
@@ -388,13 +408,13 @@ const restoreFromBackupText = (text) => {
         combined.sort((a, b) => new Date(a.at) - new Date(b.at));
 
         if (!saveOffers(combined)) {
-            showRestoreMessage("Couldn't save on this phone. Its storage is full.", false);
+            showRestoreMessage("Couldn’t save on this phone. Its storage is full.", false);
             return;
         }
     }
 
     const setupCameBack = restoreSettingsIfNeeded(backupData.settings);
-    showLedger();
+    showJournal();
 
     let message = "Nothing new to add.";
     if (newOffers.length > 0) {
@@ -413,4 +433,4 @@ restoreInput.addEventListener("change", async (event) => {
     event.target.value = "";
 });
 
-showLedger();
+showJournal();

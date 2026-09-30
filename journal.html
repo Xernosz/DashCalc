@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="night">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://dashcalc.goatcounter.com; object-src 'none'; base-uri 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Every dash you took or skipped, and what it really paid.">
+  <meta name="theme-color" content="#0E0F12">
+  <title>Journal &middot; DashCalc</title>
+  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/favicon.ico" sizes="32x32">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+  <link rel="preload" href="fonts/barlow-condensed-800.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/barlow-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/barlow-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="tokens.css?v=3">
+  <script src="version.js"></script>
+  <script src="theme.js?v=3"></script>
+
+  <style>
+    .content {
+      flex: 1;
+      display: grid;
+      align-content: start;
+      gap: 14px;
+      padding: 14px 16px 18px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    .kept {
+      display: grid;
+      gap: 14px;
+      padding: 18px 16px 16px;
+      box-shadow: var(--lift);
+    }
+
+    .kept__label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+
+    .kept__count {
+      font-size: 0.875rem;
+      color: var(--text-mute);
+    }
+
+    .kept__count b {
+      font: 700 1.05rem/1 var(--font-num);
+      color: var(--text);
+    }
+
+    .kept__big {
+      font: 800 clamp(3.2rem, 16vw, 4.4rem)/0.9 var(--font-num);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .rates {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+    }
+
+    .rate {
+      display: grid;
+      gap: 2px;
+    }
+
+    .rate+.rate {
+      padding-left: 12px;
+      border-left: 1px solid var(--line);
+    }
+
+    .rate b {
+      font: 700 1.5rem/1 var(--font-num);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .rate b[data-grade]:not([data-grade=""]) {
+      color: var(--g);
+    }
+
+    .rate span {
+      font-size: 0.875rem;
+      color: var(--text-dim);
+    }
+
+    .strip {
+      display: grid;
+      gap: 8px;
+    }
+
+    .strip:has(#grade-strip:empty) {
+      display: none;
+    }
+
+    .strip__label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+
+    .strip__row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .strip__chip {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border: 1.5px solid transparent;
+      border-radius: 10px;
+      background: var(--g-tint);
+      color: var(--g);
+      font: 800 1.2rem/1 var(--font-num);
+    }
+
+    .strip__chip--skipped {
+      border: 1.5px dashed var(--line-2);
+      background: none;
+      color: var(--text-mute);
+    }
+
+    .strip__key {
+      font-size: 0.8125rem;
+      color: var(--text-mute);
+    }
+
+    .listhead {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 6px 4px 0;
+    }
+
+    .listhead__title {
+      font: 800 1.6rem/1 var(--font-num);
+      text-transform: uppercase;
+    }
+
+    .listhead__count {
+      font-size: 0.9375rem;
+      color: var(--text-mute);
+    }
+
+    .rows {
+      overflow: hidden;
+    }
+
+    .blank {
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+      padding: 30px 20px;
+      text-align: center;
+    }
+
+    .blank[hidden],
+    #entry-blank[hidden] {
+      display: none;
+    }
+
+    .blank .icon {
+      width: 40px;
+      height: 40px;
+      color: var(--text-mute);
+    }
+
+    .blank__title {
+      font: 800 1.5rem/1 var(--font-num);
+      text-transform: uppercase;
+    }
+
+    .blank__sub {
+      max-width: 22rem;
+      color: var(--text-dim);
+    }
+
+    .blank .btn {
+      margin-top: 8px;
+    }
+
+    .entry-day {
+      padding: 10px 16px 8px;
+      background: var(--raised);
+      border-bottom: 1px solid var(--line);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+    }
+
+    .entry+.entry-day {
+      border-top: 1px solid var(--line);
+    }
+
+    .entry {
+      display: grid;
+      grid-template-columns: 46px minmax(0, 1fr) 44px;
+      gap: 12px;
+      align-items: start;
+      padding: 14px 8px 14px 14px;
+    }
+
+    .entry+.entry {
+      border-top: 1px solid var(--line);
+    }
+
+    .entry__grade {
+      display: grid;
+      place-items: center;
+      width: 46px;
+      height: 46px;
+      border-radius: 13px;
+      background: var(--g-tint);
+      color: var(--g);
+      font: 800 1.6rem/1 var(--font-num);
+    }
+
+    .entry__main {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .entry__top {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .entry__pay,
+    .entry__miles {
+      border-bottom: 1.5px dashed var(--line-2);
+      border-radius: 2px;
+      font-variant-numeric: tabular-nums;
+      outline: none;
+      cursor: text;
+    }
+
+    .entry__pay {
+      font: 700 1.6rem/1.05 var(--font-num);
+    }
+
+    .entry__miles {
+      font: 600 1.2rem/1.05 var(--font-num);
+      color: var(--text-dim);
+    }
+
+    .entry__pay:focus,
+    .entry__miles:focus {
+      border-bottom-style: solid;
+      border-bottom-color: var(--red);
+      background: var(--red-tint);
+    }
+
+    .entry__rates {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0 6px;
+      font-size: 0.9375rem;
+      font-weight: 600;
+    }
+
+    .entry__rate:first-child {
+      color: var(--g);
+    }
+
+    .entry__rate+.entry__rate {
+      color: var(--text-dim);
+    }
+
+    .entry__rate+.entry__rate::before {
+      content: "and ";
+      color: var(--text-mute);
+      font-weight: 400;
+    }
+
+    .entry__meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 8px;
+      font-size: 0.875rem;
+      color: var(--text-mute);
+    }
+
+    .entry__tag {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .entry__tag--took {
+      background: var(--grade-a-tint);
+      color: var(--grade-a);
+    }
+
+    .entry__tag--skipped {
+      border: 1px solid var(--line);
+      background: var(--raised);
+      color: var(--text-dim);
+    }
+
+    .entry__tag--far {
+      background: var(--red-tint);
+      color: var(--red-ink);
+    }
+
+    .entry__del {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      color: var(--text-mute);
+    }
+
+    .entry__del .icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    .entry__del:active {
+      background: var(--raised);
+    }
+
+    .undo {
+      position: fixed;
+      left: 50%;
+      bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 8px 8px 8px 18px;
+      border-radius: 16px;
+      background: var(--text);
+      color: var(--bg);
+      font-weight: 600;
+      white-space: nowrap;
+      box-shadow: var(--lift);
+      translate: -50% 0;
+    }
+
+    .undo[hidden] {
+      display: none;
+    }
+
+    .undo__btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 44px;
+      padding: 0 14px;
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--bg) 16%, transparent);
+      color: var(--bg);
+      font-weight: 700;
+    }
+
+    .undo__btn .icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .undo--timing {
+        animation: undo-out var(--undo-time, 8s) forwards;
+      }
+
+      .undo--timing::after {
+        content: "";
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 0;
+        height: 3px;
+        border-radius: 3px 3px 0 0;
+        background: var(--red);
+        animation: undo-drain var(--undo-time, 8s) linear forwards;
+      }
+
+      .undo--timing .undo__text {
+        animation: undo-fade var(--undo-time, 8s) ease-in forwards;
+      }
+    }
+
+    @keyframes undo-drain {
+      95%, 100% { transform: scaleX(0); }
+    }
+
+    @keyframes undo-fade {
+      95%, 100% { opacity: 0.1; }
+    }
+
+    @keyframes undo-out {
+      0%, 95% { transform: scale(1); opacity: 1; animation-timing-function: ease-out; }
+      96.5% { transform: scale(1.07); opacity: 1; animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.4); }
+      100% { transform: scale(0.2, 0.1); opacity: 0; }
+    }
+
+    .backup-overlay {
+      width: 100%;
+      max-width: 480px;
+      max-height: 90dvh;
+      margin: auto auto 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      overflow: visible;
+    }
+
+    .backup-overlay::backdrop {
+      background: transparent;
+      transition: background-color 320ms;
+    }
+
+    .backup-overlay.is-open::backdrop {
+      background: var(--backdrop);
+    }
+
+    .backup {
+      display: grid;
+      gap: 16px;
+      max-height: 90dvh;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 0 18px calc(22px + env(safe-area-inset-bottom, 0px));
+      border-radius: 26px 26px 0 0;
+      background: var(--surface);
+      transform: translateY(100%);
+      transition: transform 320ms var(--ease);
+    }
+
+    .backup.is-open {
+      transform: none;
+    }
+
+    .backup__grab {
+      width: 40px;
+      height: 5px;
+      margin: 10px auto 0;
+      border-radius: 3px;
+      background: var(--line-2);
+    }
+
+    .backup__head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .backup__title {
+      font: 800 1.6rem/1 var(--font-num);
+      text-transform: uppercase;
+    }
+
+    .backup__close {
+      display: grid;
+      place-items: center;
+      flex: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--raised);
+    }
+
+    .backup__section {
+      display: grid;
+      gap: 10px;
+    }
+
+    .backup__label {
+      font-weight: 700;
+      font-size: 1.0625rem;
+    }
+
+    .backup__hint {
+      font-size: 0.9375rem;
+      color: var(--text-dim);
+    }
+
+    .backup__choice {
+      position: relative;
+      display: grid;
+      grid-template-columns: 40px 1fr;
+      gap: 2px 12px;
+      align-items: center;
+      min-height: 72px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--raised);
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .backup__choice>.icon {
+      grid-row: span 2;
+      width: 40px;
+      height: 40px;
+      padding: 9px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      color: var(--red-ink);
+    }
+
+    .backup__choice:active {
+      transform: scale(0.99);
+    }
+
+    .backup__choice:has(:focus-visible) {
+      outline: 3px solid var(--text);
+      outline-offset: 3px;
+    }
+
+    .backup__choice-title {
+      font-weight: 700;
+    }
+
+    .backup__choice-sub {
+      font-size: 0.875rem;
+      color: var(--text-dim);
+    }
+
+    .backup__status {
+      font-weight: 600;
+    }
+
+    .backup__status:empty {
+      display: none;
+    }
+
+    .backup__status--good {
+      color: var(--grade-a);
+    }
+
+    .backup__status--bad {
+      color: var(--grade-f);
+    }
+  </style>
+</head>
+
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="app">
+    <header class="bar">
+      <a class="brand" href="index.html" translate="no"><img src="icons/favicon.svg" alt="" width="30" height="30">DashCalc</a>
+      <div class="bar__right">
+        <button class="chip-btn" id="backup-open" type="button"><svg class="icon" aria-hidden="true"><use href="icons/ui.svg#download-simple" /></svg>Back up</button>
+        <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to Day">
+          <svg class="icon theme-toggle__sun" aria-hidden="true"><use href="icons/ui.svg#sun" /></svg>
+          <svg class="icon theme-toggle__moon" aria-hidden="true"><use href="icons/ui.svg#moon" /></svg>
+        </button>
+      </div>
+    </header>
+
+    <nav class="tabs" aria-label="Pages">
+      <a class="tab" href="calculator.html"><svg class="icon" aria-hidden="true"><use href="icons/ui.svg#calculator" /></svg>Calculator</a>
+      <a class="tab" href="journal.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="icons/ui.svg#notebook" /></svg>Journal</a>
+      <a class="tab" href="setup.html"><svg class="icon" aria-hidden="true"><use href="icons/ui.svg#gear-six" /></svg>Setup</a>
+    </nav>
+
+    <main class="content" id="main">
+      <h1 class="visually-hidden">Your journal</h1>
+
+      <section class="card kept" aria-label="Your totals">
+        <div class="kept__label">
+          <span>You kept</span>
+          <span class="kept__count"><b id="sum-took">0</b> took, <b id="sum-skipped">0</b> skipped</span>
+        </div>
+        <div class="kept__big" id="sum-kept">&mdash;</div>
+        <div class="rates">
+          <div class="rate"><b id="sum-hourly" data-grade="">&mdash;</b><span>an hour</span></div>
+          <div class="rate"><b id="sum-permile" data-grade="">&mdash;</b><span>a mile</span></div>
+          <div class="rate"><b id="sum-miles">&mdash;</b><span>miles driven</span></div>
+        </div>
+        <div class="strip">
+          <span class="strip__label">Your last offers</span>
+          <div class="strip__row" id="grade-strip"></div>
+          <span class="strip__key">Filled means you took it. Dashed means you skipped it.</span>
+        </div>
+      </section>
+
+      <div class="listhead">
+        <h2 class="listhead__title">Every dash</h2>
+        <span class="listhead__count" id="entry-count"></span>
+      </div>
+
+      <section class="card rows">
+        <div id="entry-blank">
+          <div class="blank">
+            <svg class="icon" aria-hidden="true"><use href="icons/ui.svg#notebook" /></svg>
+            <span class="blank__title">Nothing logged yet</span>
+            <span class="blank__sub">Every offer you take or skip on the calculator shows up here.</span>
+            <a class="btn btn--go" href="calculator.html">Go to the calculator <svg class="icon" aria-hidden="true"><use href="icons/ui.svg#arrow-right" /></svg></a>
+          </div>
+        </div>
+        <div id="entry-list"></div>
+      </section>
+    </main>
+
+    <div class="undo" id="undo-bar" hidden role="status" aria-live="polite">
+      <span class="undo__text">Dash deleted</span>
+      <button class="undo__btn" id="undo-btn" type="button"><svg class="icon" aria-hidden="true"><use href="icons/ui.svg#arrow-counter-clockwise" /></svg>Undo</button>
+    </div>
+
+    <footer class="credit">
+      <span>Made by a driver, Xernosz</span>
+      <span>Not affiliated with DoorDash or any delivery app. Everything here is an estimate, not tax advice.</span>
+      <div class="credit__links">
+        <a class="credit__link" href="setup.html">Change my setup</a>
+        <a class="credit__link" href="legal.html">Privacy &amp; terms</a>
+        <a class="credit__link credit__link--quiet app-version" href="https://github.com/Xernosz/DashCalc/releases">v0.9.0</a>
+      </div>
+    </footer>
+  </div>
+
+  <dialog class="backup-overlay" id="backup-overlay" aria-labelledby="backup-title">
+    <div class="backup" id="backup">
+      <div class="backup__grab" aria-hidden="true"></div>
+      <div class="backup__head">
+        <h2 class="backup__title" id="backup-title">Back up your journal</h2>
+        <button class="backup__close" id="backup-close" type="button" aria-label="Close"><svg class="icon" aria-hidden="true"><use href="icons/ui.svg#x" /></svg></button>
+      </div>
+      <section class="backup__section">
+        <h3 class="backup__label">Save a copy</h3>
+        <p class="backup__hint">Keep your dashes and car setup somewhere safe.</p>
+        <button class="backup__choice" id="backup-json" type="button">
+          <svg class="icon" aria-hidden="true"><use href="icons/ui.svg#download-simple" /></svg>
+          <span class="backup__choice-title">Backup file</span>
+          <span class="backup__choice-sub">Put it back into DashCalc later on.</span>
+        </button>
+        <button class="backup__choice" id="backup-csv" type="button">
+          <svg class="icon" aria-hidden="true"><use href="icons/ui.svg#table" /></svg>
+          <span class="backup__choice-title">Spreadsheet</span>
+          <span class="backup__choice-sub">Opens in Excel or Google Sheets. Good for taxes. Can’t be put back.</span>
+        </button>
+      </section>
+      <section class="backup__section">
+        <h3 class="backup__label">Bring one back</h3>
+        <p class="backup__hint">Adds dashes from your file that aren’t here yet. Nothing gets deleted. Your car setup only comes back if this phone doesn’t have one yet.</p>
+        <label class="backup__choice" for="restore-input">
+          <svg class="icon" aria-hidden="true"><use href="icons/ui.svg#upload-simple" /></svg>
+          <span class="backup__choice-title">Choose a backup file</span>
+          <span class="backup__choice-sub">Pick a file you saved with Backup file.</span>
+          <input class="visually-hidden" id="restore-input" type="file" accept=".json,application/json">
+        </label>
+        <p class="backup__status" id="restore-status" role="status" aria-live="polite"></p>
+      </section>
+    </div>
+  </dialog>
+
+  <script src="counter.js?v=3"></script>
+  <script src="shared.js?v=3"></script>
+  <script src="offers.js?v=3"></script>
+  <script src="journal.js?v=4"></script>
+</body>
+
+</html>
