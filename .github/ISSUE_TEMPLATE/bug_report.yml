@@ -1,0 +1,42 @@
+name: Bug report
+description: Something broke, looks wrong, or the math seems off.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting! Issues are public, so leave out anything personal. Offer numbers are fine to share.
+  - type: input
+    id: device
+    attributes:
+      label: Phone and browser
+      placeholder: iPhone 13, Safari
+    validations:
+      required: true
+  - type: textarea
+    id: typed
+    attributes:
+      label: What you typed
+      description: The pay and miles, plus anything you changed on Setup (like mpg or gas price).
+      placeholder: $7.50, 4.2 miles, Far trip on
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to make it happen
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot (optional)
+      description: Drag a picture into this box.
