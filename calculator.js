@@ -1,4 +1,4 @@
-const HOURLY_THAT_FILLS_THE_DIAL = 25;
+const HOURLY_THAT_FILLS_THE_DIAL = 40;
 const GOOD_HOURLY = 20;
 const GREAT_HOURLY = 25;
 
@@ -52,7 +52,7 @@ const cheatSheetOverlay = document.getElementById("sheet-overlay");
 const cheatSheetPanel = document.getElementById("sheet");
 const goodButton = document.getElementById("seg-good");
 const greatButton = document.getElementById("seg-great");
-const cheatSheetRows = document.querySelectorAll("#sheet-list .r");
+const cheatSheetRows = document.querySelectorAll("#sheet-list .pay-row");
 const cheatSheetHeadline = document.getElementById("sheet-quick");
 const cheatSheetChips = document.querySelectorAll("#sheet-chips span");
 
@@ -90,12 +90,15 @@ const showNothingTypedYet = () => {
     verdictCard.style.setProperty("--fill", "0%");
     hourlyReadout.dataset.grade = "";
     perMileReadout.dataset.grade = "";
+    document.dispatchEvent(new CustomEvent("offerchange", { detail: null }));
 };
 
 const showOffer = (offer) => {
     offerOnScreen = offer;
     nothingTypedYetCard.hidden = true;
     answerCard.hidden = false;
+
+    if (verdictCard.dataset.grade !== offer.grade) replayPop(gradeLetter);
 
     gradeLetter.textContent = offer.grade === "S" ? GOLD_STAR : offer.grade;
     callReadout.textContent = CALL_FOR_GRADE[offer.grade];
@@ -118,6 +121,7 @@ const showOffer = (offer) => {
     mathWear.textContent = money(offer.wear);
     mathTax.textContent = money(offer.tax);
     mathKeep.textContent = money(offer.keep);
+    document.dispatchEvent(new CustomEvent("offerchange", { detail: offer }));
 };
 
 const updateVerdict = () => {
@@ -184,7 +188,7 @@ const logOffer = (took) => {
         });
 
         if (!saved) {
-            window.alert("Couldn't save this dash on this phone.");
+            window.alert("Couldn’t save that one. Your phone’s storage might be full.");
         }
 
         refreshTodayBar();
@@ -201,16 +205,16 @@ const fillCheatSheet = () => {
     const milesYouTyped = Math.round(milesDriven(Number(milesBox.value), farTripBox.checked));
 
     cheatSheetRows.forEach((row) => {
-        const miles = Number(row.dataset.mi);
+        const miles = Number(row.dataset.miles);
         const askingPrice = payNeededToHit(miles, cheatSheetGoalHourly, car).toFixed(2);
         const [dollars, cents] = askingPrice.split(".");
 
-        row.querySelector(".r__d").textContent = dollars;
-        row.querySelector(".r__c").textContent = "." + cents;
+        row.querySelector(".pay-row__dollars").textContent = dollars;
+        row.querySelector(".pay-row__cents").textContent = "." + cents;
 
         const isYourOffer = miles === milesYouTyped;
-        row.classList.toggle("r--here", isYourOffer);
-        row.querySelector(".r__flag").hidden = !isYourOffer;
+        row.classList.toggle("pay-row--yours", isYourOffer);
+        row.querySelector(".pay-row__flag").hidden = !isYourOffer;
     });
 
     const payForNoMiles = payNeededToHit(0, cheatSheetGoalHourly, car);
@@ -233,41 +237,21 @@ const fillCheatSheet = () => {
     });
 };
 
-let cheatSheetCloseTimer = null;
-
 const openCheatSheet = () => {
-    if (cheatSheetCloseTimer !== null) {
-        window.clearTimeout(cheatSheetCloseTimer);
-        cheatSheetCloseTimer = null;
-    }
-
     fillCheatSheet();
-    cheatSheetOverlay.showModal();
-    void cheatSheetPanel.offsetWidth;
-    cheatSheetOverlay.classList.add("sheet-overlay--open");
-    cheatSheetPanel.classList.add("sheet--open");
+    openSheet(cheatSheetOverlay, cheatSheetPanel);
 };
 
 const closeCheatSheet = () => {
-    if (cheatSheetCloseTimer !== null) {
-        window.clearTimeout(cheatSheetCloseTimer);
-    }
-
-    cheatSheetOverlay.classList.remove("sheet-overlay--open");
-    cheatSheetPanel.classList.remove("sheet--open");
-
-    cheatSheetCloseTimer = window.setTimeout(() => {
-        cheatSheetOverlay.close();
-        cheatSheetCloseTimer = null;
-    }, 320);
+    closeSheet(cheatSheetOverlay, cheatSheetPanel, 320);
 };
 
 const setCheatSheetGoal = (goalHourly, buttonToTurnOn, buttonToTurnOff) => {
     cheatSheetGoalHourly = goalHourly;
 
-    buttonToTurnOn.classList.add("seg__b--on");
+    buttonToTurnOn.classList.add("seg__button--on");
     buttonToTurnOn.setAttribute("aria-pressed", "true");
-    buttonToTurnOff.classList.remove("seg__b--on");
+    buttonToTurnOff.classList.remove("seg__button--on");
     buttonToTurnOff.setAttribute("aria-pressed", "false");
 
     fillCheatSheet();
@@ -280,9 +264,17 @@ const moveToMilesOnEnter = (event) => {
     }
 };
 
+const closeKeyboardOnEnter = (event) => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        milesBox.blur();
+    }
+};
+
 payBox.addEventListener("input", updateVerdict);
 payBox.addEventListener("keydown", moveToMilesOnEnter);
 milesBox.addEventListener("input", updateVerdict);
+milesBox.addEventListener("keydown", closeKeyboardOnEnter);
 farTripBox.addEventListener("change", updateVerdict);
 
 skipButton.addEventListener("click", () => logOffer(false));
